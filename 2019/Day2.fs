@@ -1,12 +1,12 @@
-﻿namespace AdventOfCode2019
+﻿namespace AdventOfCode.Event2019
 
-open Swensen.Unquote
 
 module Day2 = 
 
     open Xunit
     open FsCheck
     open FsCheck.Xunit
+    open Swensen.Unquote
 
     type Memory = int array
 

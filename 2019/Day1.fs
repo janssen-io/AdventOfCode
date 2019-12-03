@@ -1,4 +1,4 @@
-namespace AdventOfCode2019
+namespace AdventOfCode.Event2019
 
 open System
 
