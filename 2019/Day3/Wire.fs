@@ -20,7 +20,7 @@ module Wire =
         let { X = x1; Y = y1} = p1
         let { X = x2; Y = y2} = p2
         match x1 < x2, y1 < y2 with
-        | true, false  -> Line (p1, p2)
+        | true, false 
         | false, true  -> Line (p1, p2)
         | false, false -> create p2 p1
         | true, true   -> failwith "Unexpected diagonal line"
@@ -31,7 +31,7 @@ module Wire =
 
     let rec intersection line1 line2 =
         match isHorizontal line1, isHorizontal line2 with
-        | true, true -> None
+        | true, true 
         | false, false -> None
         | false, true -> intersection line2 line1
         | true, false ->
@@ -59,25 +59,21 @@ module Wire =
     let (=>) p q = not p || q
     let (<=>) p q = (p => q) && (q => p)
 
+    let xor a b = (a && not b) || (b && not a)
+
     [<Property(Arbitrary = [|typeof<Generators>|])>]
     let ``intersection: lines starting in the same place intersect`` (line1:Line) (line2:Line) =
-        let (Line ({ X = x1; Y = y1 }, { X = x2; Y = y2})) = line1
-        let (Line ({ X = x3; Y = y3 }, { X = x4; Y = y4 })) = line2
-        match isHorizontal line1, isHorizontal line2 with
-        | true, true -> ()
-        | false, false -> ()
-        |_ ->
-            test <@ (x1 = x3 && y1 = y3) => (Option.isSome <| intersection line1 line2) @>
+        let (Line ({ X = x1; Y = y1 }, _)) = line1
+        let (Line ({ X = x3; Y = y3 }, _)) = line2
+        let perpendicular = xor (isHorizontal line1) (isHorizontal line2)
+        test <@ (perpendicular && x1 = x3 && y1 = y3) => (Option.isSome <| intersection line1 line2) @>
 
     [<Property(Arbitrary = [|typeof<Generators>|])>]
     let ``intersection: lines ending in the same place intersect`` (line1:Line) (line2:Line) =
-        let (Line ({ X = x1; Y = y1 }, { X = x2; Y = y2})) = line1
-        let (Line ({ X = x3; Y = y3 }, { X = x4; Y = y4 })) = line2
-        match isHorizontal line1, isHorizontal line2 with
-        | true, true -> ()
-        | false, false -> ()
-        |_ ->
-            test <@ (x2 = x4 && y2 = y4) => (Option.isSome <| intersection line1 line2) @>
+        let (Line (_, { X = x2; Y = y2})) = line1
+        let (Line (_, { X = x4; Y = y4 })) = line2
+        let perpendicular = xor (isHorizontal line1) (isHorizontal line2)
+        test <@ (perpendicular && x2 = x4 && y2 = y4) => (Option.isSome <| intersection line1 line2) @>
 
     [<Property(Arbitrary = [|typeof<Generators>|])>]
     let ``intersection: is commutative`` (line1 : Line) (line2 : Line) =

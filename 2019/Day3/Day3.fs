@@ -33,30 +33,36 @@ module Day3 =
                 let nextPos = move pos step
                 (nextPos, create pos nextPos :: lines))
             ({ X = 0; Y = 0}, [])
+        >> snd
 
     let manhattan p = (Math.Abs(p.X) + Math.Abs(p.Y))
 
     let run f wire1 wire2 =
-        List.fold 
-            (fun (intersections:Point option list) line ->
-                let is = List.map (Wire.intersection line) wire2
-                List.append intersections is)
-            []
-            wire1
-        |> List.fold (fun d pOpt ->
-            match pOpt with
-            | None -> d
-            | Some p ->
-                let distance = f p 
-                if distance < d && distance <> 0 then
-                    distance
-                else
-                    d)
-            Int32.MaxValue
-        
+        let intersections =
+            List.fold 
+                (fun (intersections:Point option list) line ->
+                    let is = List.map (Wire.intersection line) wire2
+                    List.append intersections is)
+                []
+                wire1
+
+        let minDistance =
+            List.fold (fun d pOpt ->
+                match pOpt with
+                | None -> d
+                | Some p ->
+                    let distance = f p 
+                    if distance < d && distance <> 0 then
+                        distance
+                    else
+                        d)
+                Int32.MaxValue
+
+        minDistance intersections
+
     let runPartOne wires = 
-        let wire1 = snd <| (fst >> makeLines) wires
-        let wire2 = snd <| (snd >> makeLines) wires
+        let wire1 = (fst >> makeLines) wires
+        let wire2 = (snd >> makeLines) wires
         run manhattan wire1 wire2
 
     let pointOnLine (p1:Point) (start:Point) step =
@@ -85,12 +91,12 @@ module Day3 =
         wireLength' wire1 + wireLength' wire2
 
     let runPartTwo wires =
-        let wire1 = snd <| (fst >> makeLines) wires
-        let wire2 = snd <| (snd >> makeLines) wires
+        let wire1 = (fst >> makeLines) wires
+        let wire2 = (snd >> makeLines) wires
         run (wireLength (fst wires) (snd wires)) wire1 wire2
 
     [<Fact>]
-    let ``Part one`` () =
+    let ``Part one: answer`` () =
         test <@ runPartOne input = 1337 @>
 
     [<Fact>]
