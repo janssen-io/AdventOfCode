@@ -32,10 +32,10 @@ module Day3 =
             (fun (pos, lines) step ->
                 let nextPos = move pos step
                 (nextPos, create pos nextPos :: lines))
-            ({ X = 0; Y = 0}, [])
+            (origin, [])
         >> snd
 
-    let manhattan p = (Math.Abs(p.X) + Math.Abs(p.Y))
+    let manhattan = distance origin
 
     let run f wire1 wire2 =
         let intersections =
