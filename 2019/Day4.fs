@@ -7,17 +7,18 @@ module Day4 =
     open Utils
 
     let hasAtleastOneGroupOf2 num =
-        group (digits num)
+        digits num
+        |> group
         |> List.fold (fun isValid group -> isValid || group.Length = 2) false
 
-    let rec hasDoubleDigit =
-        digits
-        >> List.fold (fun (valid, lastDigit) currentDigit -> valid || lastDigit = currentDigit, currentDigit) (false, -1)
-        >> fst
+    let rec hasDoubleDigit num =
+        digits num
+        |> group
+        |> List.exists (fun g -> List.length g >= 2)
 
     let hasNoDecreasingDigit num =
-        let ds = digits num
-        List.sortDescending ds = ds          
+        digits num
+        |> fun ds -> List.sort ds = ds
 
     let isPassword num =
         (hasDoubleDigit num && hasNoDecreasingDigit num)

@@ -3,9 +3,8 @@
 module Utils =
 
     let rec digits (number:int) =
-        match number with
-        | n when n < 10 -> [n]
-        | n -> n % 10 :: (digits (n / 10))
+        List.ofSeq (string number)
+        |> List.map (fun c -> int c - (int '0'))
 
     let splitGroup x xs = (List.takeWhile ((=) x) xs, List.skipWhile ((=) x) xs)
 
