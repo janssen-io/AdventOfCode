@@ -19,4 +19,22 @@ module Utils =
 
         group' xs []
 
+    
+    let cartesianProduct xs ys : (('a * 'b) list) =
+        let rec cart xs' acc =
+            match xs' with
+            | [] -> acc
+            | (x::xs') ->
+                List.map (fun y -> (x, y)) ys
+                |> List.append (cart xs' acc)
+        cart xs []
+
+    let doWhile f predicate seed =
+        let rec doWhile' input acc =
+            let result = f input
+            if predicate input then
+                doWhile' result (result :: acc)
+            else
+                acc
+        doWhile' seed []
 

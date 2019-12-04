@@ -1,9 +1,11 @@
 namespace AdventOfCode.Event2019
 
 open System
+open System.Diagnostics
 
-module Day1 = 
+module Day1 =
 
+    open Utils
     open Xunit
     open FsCheck.Xunit
 
@@ -110,18 +112,17 @@ module Day1 =
             61605
         ]
 
-    let fuelRequirement mass = 
+    let fuelRequirement mass =
         Math.Max(0, mass / 3 - 2)
 
     let answer = (List.map fuelRequirement >> List.sum)
 
     let rec recursiveFuelRequirement mass =
-        match mass with
-        | m when m <= 0 -> 0
-        | _             ->
-            let requirement = fuelRequirement mass
-            let additional  = recursiveFuelRequirement requirement
-            requirement + additional
+        doWhile
+            fuelRequirement
+            (fun m -> m > 0)
+            mass
+        |> List.sum
 
     let answer2 =
         (List.map recursiveFuelRequirement >> List.sum)
@@ -135,7 +136,7 @@ module Day1 =
         fuelRequirement 14 = 2
 
     [<Property>]
-    let ``Big example`` () = 
+    let ``Big example`` () =
         fuelRequirement 1969 = 654
         && fuelRequirement 100756 = 33583
 
