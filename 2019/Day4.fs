@@ -4,46 +4,20 @@ module Day4 =
 
     open Xunit
     open Swensen.Unquote
+    open Utils
 
     let hasAtleastOneGroupOf2 num =
-        let rec groups num lastDigit acc =
-            if num = 0 then
-                acc
-            else
-                let digit = num % 10
-                let rem = num / 10
-                if digit = lastDigit then
-                    match acc with
-                    | []  -> failwith "Unexpected empty accumulator"
-                    | (group::gs) ->
-                        groups rem digit ((digit :: group) :: gs)
-                else
-                    groups rem digit ([digit] :: acc)
-        
-        groups num 10 []
+        group (digits num)
         |> List.fold (fun isValid group -> isValid || group.Length = 2) false
 
-    let rec hasDoubleDigit num =
-        let rec isValid lastNum remaining acc =
-            if remaining = 0 then
-                acc
-            else
-                let digit = remaining % 10
-                let rem = remaining / 10
-                isValid digit rem (acc || digit = lastNum)
-            
-        isValid 10 num false
+    let rec hasDoubleDigit =
+        digits
+        >> List.fold (fun (valid, lastDigit) currentDigit -> valid || lastDigit = currentDigit, currentDigit) (false, -1)
+        >> fst
 
     let hasNoDecreasingDigit num =
-        let rec isValid lastNum remaining acc =
-            if remaining = 0 then
-                acc
-            else
-                let digit = remaining % 10
-                let rem = remaining / 10
-                isValid digit rem (acc && digit <= lastNum)
-            
-        isValid 10 num true
+        let ds = digits num
+        List.sortDescending ds = ds          
 
     let isPassword num =
         (hasDoubleDigit num && hasNoDecreasingDigit num)
