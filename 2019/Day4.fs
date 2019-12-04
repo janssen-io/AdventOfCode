@@ -5,7 +5,7 @@ module Day4 =
     open Xunit
     open Swensen.Unquote
 
-    let hasEvenGroups num =
+    let hasAtleastOneGroupOf2 num =
         let rec groups num lastDigit acc =
             if num = 0 then
                 acc
@@ -49,7 +49,7 @@ module Day4 =
         (hasDoubleDigit num && hasNoDecreasingDigit num)
 
     let isPassword2 num =
-        isPassword num && hasEvenGroups num
+        isPassword num && hasAtleastOneGroupOf2 num
 
     let run filter lower upper =
         [lower .. upper]
