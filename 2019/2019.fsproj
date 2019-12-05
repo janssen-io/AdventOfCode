@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="UtilsTests.fs" />
+    <Compile Include="Day5.fs" />
     <Compile Include="Day4.fs" />
     <Compile Include="Day3\Wire.fs" />
     <Compile Include="Day3\Day3.fs" />
