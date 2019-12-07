@@ -1,6 +1,14 @@
 ﻿namespace AdventOfCode.Event2019
 
 module Utils =
+    let curry2 f a b = f (a, b)
+    let curry3 f a b c = f (a, b, c)
+    let uncurry2 f (a,b) = f a b
+    let uncurry3 f (a,b,c) = f a b c
+
+    let readlines filename =
+        System.IO.File.ReadLines filename
+        |> List.ofSeq
 
     let rec digits (number:int) =
         List.ofSeq (string number)

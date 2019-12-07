@@ -11,6 +11,8 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="UtilsTests.fs" />
+    <Compile Include="Day6\Day6.fs" />
+    <None Include="Day6\input" />
     <Compile Include="Day5.fs" />
     <Compile Include="Day4.fs" />
     <Compile Include="Day3\Wire.fs" />
@@ -19,6 +21,8 @@
     <Compile Include="Day1.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FsCheck" Version="2.14.0" />
