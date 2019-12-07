@@ -14,6 +14,8 @@ module Utils =
         List.ofSeq (string number)
         |> List.map (fun c -> int c - (int '0'))
 
+    // e.g. splitGroup 1 [1,1,2,3,3,3,2,2] -> ([1,1],[2,3,3,3,2,2])
+    // e.g. splitGroup 2 [1,1,2,3,3,3,2,2] -> ([], [1,1,2,3,3,3,2,2])
     let splitGroup x xs = (List.takeWhile ((=) x) xs, List.skipWhile ((=) x) xs)
 
     let group xs =
@@ -26,6 +28,15 @@ module Utils =
 
         group' xs []
 
+    let rec distribute e ys =
+        match ys with
+        | [] -> [[e]]
+        | x::xs' as xs -> (e::xs)::[for xs in distribute e xs' -> x::xs]
+
+    let rec permutations xs =
+        match xs with
+        | [] -> [[]]
+        | (y::ys) -> List.collect (distribute y) (permutations ys)
     
     let cartesianProduct xs ys : (('a * 'b) list) =
         let rec cart xs' acc =
@@ -45,3 +56,8 @@ module Utils =
                 acc
         doWhile' seed []
 
+    let rec factorial n =
+        match n with
+        | m when n >= 1 -> m * (factorial (m - 1))
+        | _ when n = 0 -> 1
+        | _ -> failwith "Cannot calculate factorial of n < 1"

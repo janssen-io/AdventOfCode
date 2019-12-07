@@ -19,6 +19,9 @@
       <FixtureTestSelector>
         <FixtureName>AdventOfCode.Event2019.Day5</FixtureName>
       </FixtureTestSelector>
+      <FixtureTestSelector>
+        <FixtureName>AdventOfCode.Event2019.Day6</FixtureName>
+      </FixtureTestSelector>
     </IgnoredTests>
   </Settings>
 </ProjectConfiguration>
