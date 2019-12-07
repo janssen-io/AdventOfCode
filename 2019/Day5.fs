@@ -30,7 +30,7 @@ module Day5 =
 
     type ParameterConstructor = int -> Parameter
 
-    type Instruction = Operation * int list
+    type Instruction = Operation * Parameter list
 
     type State = {
         Memory : Memory
@@ -93,9 +93,7 @@ module Day5 =
 
     let getParameters instruction (modes : ParameterConstructor list) (memory : Memory) ip =
         seq { for p in [1..arity instruction] do yield memory.[ip + p] }
-        |> Seq.mapi (fun i address -> 
-            modes.[i] address
-        )
+        |> Seq.mapi (fun i address -> modes.[i] address)
         |> List.ofSeq
 
     let evalParameter (memory:Memory) p =

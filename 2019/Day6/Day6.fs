@@ -75,30 +75,28 @@ module Day6 =
     let rec distanceTo obj tree =
         match tree with
         | Leaf name when name = obj ->
-            Some -1
+            Some 0
         | Leaf   _ -> 
             None
         | Node (name, _) when name = obj ->
-            Some -1
+            Some 0
         | Node (_, children) ->
             List.map (distanceTo obj) children
             |> List.map (Option.map ((+) 1))
             |> sequence
             |> Option.map List.min
 
-    let orbitsBetween a b tree =
+    let orbitJumpsBetween a b tree =
         let fleaf acc _ = acc
         let fnode acc (na, nb) =
             match acc, na, nb with
-            | None, Some na', Some nb' -> Some (na', nb')
-            | Some acc', Some na', Some nb' -> Some (na', nb')
-            | Some acc', _, _ -> acc
-            | _, _, _ -> None
+            // if distance = 1, then 0 orbit jumps required
+            | _, Some na', Some nb' -> Some (na' - 1, nb' - 1) 
+            | Some _, _, _          -> acc
+            | _, _, _               -> None
 
-        let dtree = Tree.maptree (fun t -> (distanceTo a t, distanceTo b t)) tree
-        Debug.WriteLine dtree
-        dtree |> Tree.fold fleaf fnode None
-
+        Tree.maptree (fun t -> (distanceTo a t, distanceTo b t)) tree
+        |> Tree.fold fleaf fnode None
 
     let parseInput orbits =
         let addRelation left right orbitmap =
@@ -196,14 +194,14 @@ module Day6 =
         let tree = 
             (parseInput >> createTree)
             <| ["COM)B"; "B)C"; "C)D"; "D)E"; "E)F"; "B)G"; "G)H"; "D)I"; "E)J"; "J)K"; "K)L"; "K)YOU"; "I)SAN"]
-        let ds = orbitsBetween "SAN" "YOU" tree
+        let ds = orbitJumpsBetween "SAN" "YOU" tree
         test <@ (Some (1, 3)) = ds @>
 
     [<Fact>]
     let ``Part two: answer`` () =
         let ds = 
             "Day6/input"
-            |> (Utils.readlines >> parseInput >> createTree >> orbitsBetween "SAN" "YOU")
+            |> (Utils.readlines >> parseInput >> createTree >> orbitJumpsBetween "SAN" "YOU")
         test <@ Option.map (Utils.uncurry2 (+)) ds = Some 391 @>
 
             
