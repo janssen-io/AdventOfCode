@@ -38,6 +38,7 @@ module Day7 =
         HasHalted : bool
         Input : int list
         Output : int list
+        Name : string
     }
 
     let startState memory =
@@ -46,6 +47,7 @@ module Day7 =
           HasHalted = false 
           Input = []
           Output = []
+          Name = "Untitled"
         }
 
     let arity instruction =
@@ -103,8 +105,10 @@ module Day7 =
 
     let evalInstruction (instruction, (parameters:Parameter list)) state =
         let position = 
-            state.Memory.[state.InstructionPointer + arity instruction + 1]
-            |> Position
+            lazy (
+                state.Memory.[state.InstructionPointer + arity instruction + 1]
+                |> Position
+            )
 
         let nextIp = state.InstructionPointer + arity instruction + 2
 
@@ -122,102 +126,138 @@ module Day7 =
                 { state with Output = state.Memory.[pos] :: state.Output }
             | Immediate _ -> failwithf "Cannot read from an immediate value"
 
-        parameters
-        |> match instruction with
-            | Add -> 
-                List.map (evalParameter state.Memory)
-                >> List.fold (+) 0
-                >> writeMem state position
-                >> fun s -> { s with InstructionPointer = nextIp }
-            | Multiply ->
-                List.map (evalParameter state.Memory)
-                >> List.fold (*) 1
-                >> writeMem state position
-                >> fun s -> { s with InstructionPointer = nextIp }
-            | Input -> 
-                fun _ ->
-                    let value,tail = List.head state.Input, List.tail state.Input
-                    Position (state.InstructionPointer + 1)
-                    |> evalParameter state.Memory 
-                    |> fun p -> writeMem state (Position p) value
-                    |> fun s -> { s with Input = tail; InstructionPointer = nextIp }
-            | Output -> 
-                fun _ ->
-                    Position (state.InstructionPointer + 1)
-                    |> evalParameter state.Memory
-                    |> Position
-                    |> readMem state
-                    |> fun s -> { s with InstructionPointer = nextIp }
-            | JumpNotZero ->
-                List.map (evalParameter state.Memory)
-                >> (fun [value;jmp] -> if value <> 0 then jmp else nextIp - 1)
-                >> fun jmp -> { state with InstructionPointer = jmp }
-            | JumpZero ->
-                List.map (evalParameter state.Memory)
-                >> (fun [value;jmp] -> if value = 0 then jmp else nextIp - 1)
-                >> fun jmp -> { state with InstructionPointer = jmp }
-            | LessThan ->
-                List.map (evalParameter state.Memory)
-                >> (fun [a;b] -> if a < b then 1 else 0)
-                >> fun b -> writeMem state position b
-                >> fun s -> { s with InstructionPointer = nextIp }
-            | Equals ->
-                List.map (evalParameter state.Memory)
-                >> (fun [a;b] -> if a = b then 1 else 0)
-                >> fun b -> writeMem state position b
-                >> fun s -> { s with InstructionPointer = nextIp }
-            | Halt -> failwithf "Cannot perform %A" instruction
+        Debug.WriteLine (sprintf "%s.%2i do %A with %A on %A" state.Name state.InstructionPointer instruction parameters position)
+       
+        let f () = 
+            parameters
+            |> match instruction with
+                | Add -> 
+                    List.map (evalParameter state.Memory)
+                    >> List.fold (+) 0
+                    >> writeMem state (position.Force())
+                    >> fun s -> { s with InstructionPointer = nextIp }
+                | Multiply ->
+                    List.map (evalParameter state.Memory)
+                    >> List.fold (*) 1
+                    >> writeMem state (position.Force())
+                    >> fun s -> { s with InstructionPointer = nextIp }
+                | Input -> 
+                    fun _ ->
+                        let value,tail = List.head state.Input, List.tail state.Input
+                        position
+                        |> fun p -> writeMem state  (p.Force()) value
+                        |> fun s -> { s with Input = tail; InstructionPointer = nextIp }
+                | Output -> 
+                    fun _ ->
+                        (position.Force())
+                        |> readMem state
+                        |> fun s -> { s with InstructionPointer = nextIp }
+                | JumpNotZero ->
+                    List.map (evalParameter state.Memory)
+                    >> (fun [value;jmp] -> if value <> 0 then jmp else nextIp - 1)
+                    >> fun jmp -> { state with InstructionPointer = jmp }
+                | JumpZero ->
+                    List.map (evalParameter state.Memory)
+                    >> (fun [value;jmp] -> if value = 0 then jmp else nextIp - 1)
+                    >> fun jmp -> { state with InstructionPointer = jmp }
+                | LessThan ->
+                    List.map (evalParameter state.Memory)
+                    >> (fun [a;b] -> if a < b then 1 else 0)
+                    >> fun b -> writeMem state (position.Force()) b
+                    >> fun s -> { s with InstructionPointer = nextIp }
+                | Equals ->
+                    List.map (evalParameter state.Memory)
+                    >> (fun [a;b] -> if a = b then 1 else 0)
+                    >> fun b -> writeMem state (position.Force()) b
+                    >> fun s -> { s with InstructionPointer = nextIp }
+                | Halt -> fun _ -> { state with HasHalted = true }
+
+        let result = f ()
+        result
 
     let computer state =
         let (instruction, paramModes) = parseInstruction state.Memory.[state.InstructionPointer]
-        match instruction with
-        | Halt -> { state with HasHalted = true }
-        | _    ->
-            let ip = state.InstructionPointer 
-            let parameters = getParameters instruction paramModes state.Memory ip
-            (evalInstruction (instruction, parameters) state)
+        let ip = state.InstructionPointer 
+        let parameters = getParameters instruction paramModes state.Memory ip
+        evalInstruction (instruction, parameters) state
 
-    let run =
-        doWhile
-            computer
-            (fun s -> not s.HasHalted)
+    let rec run state =
+        //doWhile
+        //    computer
+        //    (fun s -> not s.HasHalted)
+        let (instruction, _) = parseInstruction state.Memory.[state.InstructionPointer]
+        if List.isEmpty state.Input && instruction = Input || state.HasHalted then
+            state
+        else
+            (computer >> run) state
 
     let amplifier memory phase signal =
         { startState memory with Input = [phase; signal] }
         |> run
-        |> List.head
-
-    let sendSignal input a b c d e =
-        let A = amplifier (Array.copy input) a 0
-        let B = amplifier (Array.copy input) b (List.head A.Output)
-        let C = amplifier (Array.copy input) c (List.head B.Output)
-        let D = amplifier (Array.copy input) d (List.head C.Output)
-        let E = amplifier (Array.copy input) e (List.head D.Output)
-        E.Output |> List.head
+        //|> List.head
 
     let sendSignal' input phases =
-        List.map (fun p -> amplifier (Array.copy input) p) phases
-        |> List.fold (fun o amp -> (amp o).Output.Head) 0
+        List.map (amplifier (Array.copy input)) phases
+        |> List.fold (fun o amp -> List.head (amp o).Output) 0
 
     let runPartOne (input:int array) =
         permutations [0..4]
         |> List.map (sendSignal' input)
         |> List.max
 
-    let run2 =
-        doWhile
-            computer
-            (fun s -> (not << List.isEmpty) s.Output || s.HasHalted)
+    let rec run2 =
+        doWhile computer (fun state ->
+            let (instruction, _) = parseInstruction state.Memory.[state.InstructionPointer]
+            not (instruction = Input && List.isEmpty state.Input)
+            && not state.HasHalted)
 
-    let amplifier2 memory phase signal =
-        { startState memory with Input = [phase; signal] }
+    let initializeAmp memory phase signal =
+        { startState memory with Input = [phase; signal]; Name = string phase }
         |> run2
+        |> List.head
 
-    let sendSignal2 memory a b c d e = ()
+    let rec updateAmp state signal =
+        match signal with
+            | None -> { state with Input = []; Output = [] }
+            | Some sign -> { state with Input = [sign]; Output = [] }
+        |> run2
+        |> List.head
+
+    let sendSignal2 input phases =
+        let amplifiers =
+            List.scan
+                (fun prevAmp phase ->
+                    initializeAmp (Array.copy input) phase prevAmp.Output.Head
+                )
+                { startState [||] with Output = [0] }
+                phases
+            |> List.tail
+
+        let run lastOut =
+            List.scan
+                (fun prevAmp currAmp -> updateAmp currAmp (List.tryHead prevAmp.Output))
+                { startState [||] with Output = [lastOut] }
+            >> List.tail
+
+        //List.scan 
+        //    (fun output amps -> 
+        //        let updatedAmps = run output amps)V
+
+        let rec calcSignal amps acc =
+            if (List.last amps).HasHalted then
+                List.head acc
+            else
+                let updatedAmps = run (List.head acc) amps
+                let output = List.head (List.last updatedAmps).Output
+                calcSignal updatedAmps (output :: acc)
+
+        calcSignal amplifiers [0]
+
 
     let runPartTwo (input:int array) =
         permutations [5..9]
-        |> List.map (fun [a;b;c;d;e] -> sendSignal input a b c d e)
+        |> List.map (sendSignal2 input)
+        //|> List.map (fst >> List.head >> (fun s -> List.head s.Output))
         |> List.max
 
     let readinput () =
@@ -228,10 +268,21 @@ module Day7 =
     [<Fact>]
     let ``Part one: basic example`` () =
         let input = [|3;15;3;16;1002;16;10;16;1;16;15;15;4;15;99;0;0|]
-        let signal = sendSignal input 4 3 2 1 0
+        let signal = sendSignal' input [4;3;2;1;0]
         test <@ 43210 = signal @>
 
     [<Fact>]
     let ``Part one: answer`` () =
         let answer = runPartOne (readinput ())
+        test <@ 24405 = answer @>
+
+    [<Fact>]
+    let ``Part two: basic example`` () =
+        let input = [|3;26;1001;26;-4;26;3;27;1002;27;2;27;1;27;26;27;4;27;1001;28;-1;28;1005;28;6;99;0;0;5|]
+        let result = sendSignal2 input [9;8;7;6;5]
+        test <@ result = 139_629_729 @>
+
+    [<Fact>]
+    let ``Part two: answer`` () =
+        let answer = runPartTwo (readinput ())
         test <@ 24405 = answer @>

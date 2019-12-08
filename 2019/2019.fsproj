@@ -11,6 +11,10 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="UtilsTests.fs" />
+    <Compile Include="Day8\Day8.fs" />
+    <None Include="Day8\input">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <Content Include="Day7\input">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -27,8 +31,6 @@
     <Compile Include="Day1.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
-  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FsCheck" Version="2.14.0" />

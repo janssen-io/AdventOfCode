@@ -48,13 +48,12 @@ module Utils =
         cart xs []
 
     let doWhile f predicate seed =
-        let rec doWhile' input acc =
-            let result = f input
+        let rec doWhile' (input::acc) =
             if predicate input then
-                doWhile' result (result :: acc)
+                doWhile' (f input :: input :: acc)
             else
-                acc
-        doWhile' seed []
+                (input::acc)
+        doWhile' [f seed]
 
     let rec factorial n =
         match n with

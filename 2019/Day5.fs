@@ -103,8 +103,9 @@ module Day5 =
 
     let evalInstruction (instruction, (parameters:Parameter list)) state =
         let position = 
-            state.Memory.[state.InstructionPointer + arity instruction + 1]
-            |> Position
+            lazy (
+                state.Memory.[state.InstructionPointer + arity instruction + 1]
+                |> Position)
 
         let nextIp = state.InstructionPointer + arity instruction + 2
 
@@ -127,25 +128,22 @@ module Day5 =
             | Add -> 
                 List.map (evalParameter state.Memory)
                 >> List.fold (+) 0
-                >> writeMem state position
+                >> writeMem state (position.Force ())
                 >> fun s -> { s with InstructionPointer = nextIp }
             | Multiply ->
                 List.map (evalParameter state.Memory)
                 >> List.fold (*) 1
-                >> writeMem state position
+                >> writeMem state (position.Force ())
                 >> fun s -> { s with InstructionPointer = nextIp }
             | Input -> 
                 fun _ ->
                     let value,tail = List.head state.Input, List.tail state.Input
-                    Position (state.InstructionPointer + 1)
-                    |> evalParameter state.Memory 
-                    |> fun p -> writeMem state (Position p) value
+                    (position.Force ())
+                    |> fun p -> writeMem state p value
                     |> fun s -> { s with Input = tail; InstructionPointer = nextIp }
             | Output -> 
                 fun _ ->
-                    Position (state.InstructionPointer + 1)
-                    |> evalParameter state.Memory
-                    |> Position
+                    (position.Force ())
                     |> readMem state
                     |> fun s -> { s with InstructionPointer = nextIp }
             | JumpNotZero ->
@@ -159,23 +157,20 @@ module Day5 =
             | LessThan ->
                 List.map (evalParameter state.Memory)
                 >> (fun [a;b] -> if a < b then 1 else 0)
-                >> fun b -> writeMem state position b
+                >> fun b -> writeMem state (position.Force ()) b
                 >> fun s -> { s with InstructionPointer = nextIp }
             | Equals ->
                 List.map (evalParameter state.Memory)
                 >> (fun [a;b] -> if a = b then 1 else 0)
-                >> fun b -> writeMem state position b
+                >> fun b -> writeMem state (position.Force ()) b
                 >> fun s -> { s with InstructionPointer = nextIp }
-            | Halt -> failwithf "Cannot perform %A" instruction
+            | Halt -> fun _ -> { state with HasHalted = true }
 
     let computer state =
         let (instruction, paramModes) = parseInstruction state.Memory.[state.InstructionPointer]
-        match instruction with
-        | Halt -> { state with HasHalted = true }
-        | _    ->
-            let ip = state.InstructionPointer 
-            let parameters = getParameters instruction paramModes state.Memory ip
-            (evalInstruction (instruction, parameters) state)
+        let ip = state.InstructionPointer 
+        let parameters = getParameters instruction paramModes state.Memory ip
+        (evalInstruction (instruction, parameters) state)
 
     let oldComputer = computer
 
