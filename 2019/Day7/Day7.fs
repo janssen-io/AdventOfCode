@@ -233,11 +233,12 @@ module Day7 =
                 phases
             |> List.tail
 
-        let run lastOut =
-            List.scan
+        let run amps =
+            amps
+            |> List.scan
                 (fun prevAmp currAmp -> updateAmp currAmp (List.tryHead prevAmp.Output))
-                { startState [||] with Output = [lastOut] }
-            >> List.tail
+                (List.last amps)
+            |> List.tail
 
         //List.scan 
         //    (fun output amps -> 
@@ -247,7 +248,7 @@ module Day7 =
             if (List.last amps).HasHalted then
                 List.head acc
             else
-                let updatedAmps = run (List.head acc) amps
+                let updatedAmps = run amps
                 let output = List.head (List.last updatedAmps).Output
                 calcSignal updatedAmps (output :: acc)
 
