@@ -126,7 +126,11 @@ module Day7 =
                 { state with Output = state.Memory.[pos] :: state.Output }
             | Immediate _ -> failwithf "Cannot read from an immediate value"
 
-        Debug.WriteLine (sprintf "%s.%2i do %A with %A on %A" state.Name state.InstructionPointer instruction parameters position)
+        match instruction with
+        | Halt ->
+            Debug.WriteLine (sprintf "%s.%2i do %A" state.Name state.InstructionPointer instruction)
+        | _ ->            
+            Debug.WriteLine (sprintf "%s.%2i do %A with %A on %A" state.Name state.InstructionPointer instruction parameters (position.Force ()))
        
         let f () = 
             parameters
@@ -182,9 +186,6 @@ module Day7 =
         evalInstruction (instruction, parameters) state
 
     let rec run state =
-        //doWhile
-        //    computer
-        //    (fun s -> not s.HasHalted)
         let (instruction, _) = parseInstruction state.Memory.[state.InstructionPointer]
         if List.isEmpty state.Input && instruction = Input || state.HasHalted then
             state
@@ -194,7 +195,6 @@ module Day7 =
     let amplifier memory phase signal =
         { startState memory with Input = [phase; signal] }
         |> run
-        //|> List.head
 
     let sendSignal' input phases =
         List.map (amplifier (Array.copy input)) phases
@@ -240,10 +240,6 @@ module Day7 =
                 (List.last amps)
             |> List.tail
 
-        //List.scan 
-        //    (fun output amps -> 
-        //        let updatedAmps = run output amps)V
-
         let rec calcSignal amps acc =
             if (List.last amps).HasHalted then
                 List.head acc
@@ -252,13 +248,12 @@ module Day7 =
                 let output = List.head (List.last updatedAmps).Output
                 calcSignal updatedAmps (output :: acc)
 
-        calcSignal amplifiers [0]
+        calcSignal amplifiers []
 
 
     let runPartTwo (input:int array) =
         permutations [5..9]
         |> List.map (sendSignal2 input)
-        //|> List.map (fst >> List.head >> (fun s -> List.head s.Output))
         |> List.max
 
     let readinput () =
@@ -286,4 +281,4 @@ module Day7 =
     [<Fact>]
     let ``Part two: answer`` () =
         let answer = runPartTwo (readinput ())
-        test <@ 24405 = answer @>
+        test <@ 8271623 = answer @>
