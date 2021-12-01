@@ -10,6 +10,18 @@ module UtilsTests =
 
     open Utils
 
+    [<Fact>]
+    let ``Ratio: simplifies the numbers`` () =
+        test <@ ratio 8 4 = ratio 2 1 @>
+
+    [<Fact>]
+    let ``Ratio: does not switch dividend and divisor`` () =
+        test <@ ratio 3 2 <> ratio 2 3 @>
+
+    [<Fact>]
+    let ``Ratio: does not switch dividensd and divisor`` () =
+        test <@ ratio 3 2 <> ratio 4 3 @>
+
     [<Property>]
     let ``digits: concatenation equals input`` (x:PositiveInt) =
         let ds = digits x.Get

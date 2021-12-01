@@ -1,10 +1,35 @@
 ﻿namespace AdventOfCode.Event2019
 
+open System
+
 module Utils =
+    type Ratio = Ratio of int * int
+
+    let rec gcd a b =
+        if b = 0 then
+            a
+        else
+            gcd b (a % b) 
+    
+    let ratio y x =
+        let divisor = abs <| gcd y x
+        Ratio ((y / divisor), (x / divisor))
+
+    let angle (Ratio (y, x)) =
+        let x = (atan2 (float x) (float y))
+        if x >= 0.0 then
+            x
+        else
+            360.0 - x
+
+    let compareRatio r1 r2 =
+        compare (angle r1) (angle r2)
+
     let curry2 f a b = f (a, b)
     let curry3 f a b c = f (a, b, c)
     let uncurry2 f (a,b) = f a b
     let uncurry3 f (a,b,c) = f a b c
+
 
     let tee f x = 
         f x |> ignore

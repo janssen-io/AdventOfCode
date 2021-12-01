@@ -11,7 +11,11 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="UtilsTests.fs" />
+    <Compile Include="Day10\Day10.fs" />
     <Compile Include="Day8\Day8.fs" />
+    <None Include="Day10\input">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Day8\input">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
