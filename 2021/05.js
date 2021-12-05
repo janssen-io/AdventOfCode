@@ -24,102 +24,80 @@ const parseLine = l => {
     return l;
 }
 
-const isOverlapping = (l1, l2) => {
-    if (isV(l1) && isV(l2)) {
-        return l1.x1 == l2.x1
-            && l1.y1 >= l2.y1
-            && l1.y1 <= l2.y2;
-    }
-    if (isH(l1) && isH(l2)) {
-        return l1.y1 == l2.y1
-            && l1.x1 >= l2.x1
-            && l1.x1 <= l2.x2;
-    }
-    if (isH(l1)) {
-        return l2.x1 >= l1.x1
-            && l2.x1 <= l1.x2
-            && l1.y1 >= l2.y1
-            && l1.y1 <= l2.y2;
-    }
-    if (isV(l1)) {
-        return l2.y1 >= l1.y1
-            && l2.y1 <= l1.y2
-            && l1.x1 >= l2.x1
-            && l1.x1 <= l2.x2;
-    }
-    console.error("Invalid Combo")
-    // return (l1[0] > l2[0] && l1[1] < l2[1]);
-}
-
 const isH = l => l.y1 === l.y2;
 const isV = l => l.x1 === l.x2;
 
-const intersection = (l1, l2) => {
-    var points = [];
-
-    if (isV(l1) && isV(l2) && l1.x1 == l2.x1) {
-        var x = l1.x1;
-        var lower = Math.max(l1.y1, l2.y1);
-        var upper = Math.min(l1.y2, l2.y2);
-        if (lower > upper) {
-            console.log(swapped);
-            [lower, upper] = [upper, lower];
-        }
-        for(let y = lower; y <= upper; y++) {
-            points.push([x, y])
-        }
+const drawH = (grid, line) => {
+    for(let x = line.x1; x <= line.x2; x++) {
+        grid[x] = grid[x] || [];
+        grid[x][line.y1] = (grid[x][line.y1] || 0) + 1;
     }
-    else if(isH(l1) && isH(l2) && l1.y1 == l2.y1) {
-        var y = l1.y1;
-        var lower = Math.max(l1.x1, l2.x1);
-        var upper = Math.min(l1.x2, l2.x2);
-        if (lower > upper) {
-            console.log(swapped);
-            [lower, upper] = [upper, lower];
-        }
-        for(let x = lower; x <= upper; x++) {
-            points.push([x, y])
-        }
-    }
-    else if (isH(l1) && isV(l2)) {
-        points.push([l2.x1, l1.y1])
-    }
-    else if (isV(l1) && isH(l2)) {
-        points.push([l1.x1, l2.y1])
-    }
-    else {
-        console.error("overlap but no intersection ??");
-    }
-    return points;
+    return grid;
 }
 
-function onlyUnique(value, index, self) {
-  return self.indexOf(value) === index;
+const drawV = (grid, line) => {
+    console.log(line);
+    for(let y = line.y1; y <= line.y2; y++) {
+        grid[line.x1] = grid[line.x1] || [];
+        grid[line.x1][y] = (grid[line.x1][y] || 0) + 1;
+    }
+    return grid;
+}
+
+const drawD = (grid, line) => {
+    var yd = line.y1 > line.y2 ? -1 : 1;
+    var xd = line.x1 > line.x2 ? -1 : 1;
+
+    var cmp = _y => yd > 0
+        ? (_y <= line.y2)
+        : (_y >= line.y2);
+
+    var x = line.x1;
+    for(let y = line.y1; cmp(y); y += yd) {
+        grid[x] = grid[x] || [];
+        grid[x][y] = (grid[x][y] || 0) + 1;
+        x += xd;
+    }
+    return grid;
+}
+
+const print = row => {
+    let s = "";
+    for(let i = 0; i < row.length; i++) {
+        if (row[i] > 0 ) {
+            s += row[i];
+        }
+        else {
+            s += ".";
+        }
+    }
+    console.log(s);
 }
 
 // solvers
 function solve1(lines) {
-    var straights = lines.map(parseLine).filter(l => isV(l) || isH(l) );
+    var straights = lines.map(parseLine); //.filter(l => isV(l) || isH(l) );
     var points = [];
+    var grid = [];
     for(let i = 0; i < straights.length; i++) {
-        for (let j = i + 1; j < straights.length; j++) {
-            var l1 = straights[i];
-            var l2 =straights[j];
-            if (isOverlapping(l1, l2) || isOverlapping(l2, l1)) {
-                var overlaps = intersection(l1, l2)
-                points = points.concat(overlaps);
+        let line = straights[i];
+        if (isH(line))
+            grid = drawH(grid, straights[i]);
+        else if (isV(line))
+            grid = drawV(grid, straights[i]);
+        else
+            grid = drawD(grid, straights[i]);
+    }
+
+    for (let x in grid) {
+        for (let y in grid[x]) {
+            if (grid[x][y] >= 2) {
+                points.push(`${x},${y}`);
             }
         }
     }
-    var s = points.map(x => "" + x).filter(onlyUnique);
-    return { l: s.length, s: s.sort() }
+    return { answer: points.length, points }
 }
 
-function solve2(lines) {
-    return lines;
-}
-
-
-// run
-p('05-example.txt', solve1);
+// p('05-example.txt', solve1);
 p('05-input.txt', solve1);
