@@ -56,9 +56,40 @@
 (defun sum (xs)
   (reduce #'+ xs))
 
+(defun replace-if (predicate xs replacement &optional acc)
+  (cond
+    ((null (car xs))               (reverse acc))
+    ((funcall predicate (car xs)) (replace-if predicate (cdr xs) replacement (cons replacement acc)))
+    (t                            (replace-if predicate (cdr xs) replacement (cons (car xs) acc)))))
+
+(defun cycle-naive (fishes)
+  (let (
+    (next-fishes (mapcar (lambda (fish) (- fish 1)) fishes))
+    (numBabies (count-if (lambda (f) (= f 0)) fishes))
+  )
+  (concatenate 'list
+    (replace-if (lambda (f) (= f -1)) next-fishes 6) ; old-fishes
+    (make-list numBabies :initial-element 8)))) ; new fishes
+
+(defun simulate-naive (days fishes)
+  (if (= days 0)
+    fishes
+    (simulate-naive (- days 1) (cycle-naive fishes))))
+
+; (defun simulate-any (algorithm days &rest args)
+;   (if (= days 0)
+;     args
+;     (simulate (- days 1) (apply algorithm args))))
+
 (print
   (sum
     (simulate 256
       (count-fishes (record)
         (parse-fishes
           (read-file-as-lines "06-input.txt"))))))
+
+(print
+  (length
+    (simulate-naive 80
+        (parse-fishes
+          (read-file-as-lines "06-example.txt")))))
