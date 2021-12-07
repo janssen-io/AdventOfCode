@@ -1,48 +1,51 @@
-﻿using System.Diagnostics;
+﻿using Aoc.Library.IO;
+using Aoc.Library.Puzzles;
 
 namespace Aoc.Library;
 
 public class Runner
 {
-	private readonly string _inputPath;
-	private readonly ICollectPuzzles _puzzles;
+	private readonly IReadInput _inputReader;
+	private readonly TextWriter _output;
+	private readonly IProvidePuzzles _puzzles;
 
-	public Runner(string inputPath, ICollectPuzzles puzzles)
+	public Runner(IReadInput inputReader, TextWriter output, IProvidePuzzles puzzles)
 	{
-		_inputPath = inputPath;
+		_inputReader = inputReader;
+		_output = output;
 		_puzzles = puzzles;
 	}
 	
-	
-	public (string, string) Benchmark(int year, int day, string type, out long ticks)
+	public (string, string) SolveExamplePuzzle(PuzzleNumber puzzleNumber)
 	{
-		var input = ReadLines(day, type);
-		var puzzle = _puzzles.Get(year, day);
-		
-		var sw = new Stopwatch();
-		sw.Start();
-		string answerA = puzzle.SolvePartA(input);
-		string answerB = puzzle.SolvePartB(input);
-		ticks = sw.ElapsedMilliseconds;
-
-		return (answerA, answerB);
-	}
-	
-	public (string, string) Solve(int year, int day, string type)
-	{
-		var input = ReadLines(day, type);
-		var puzzle = _puzzles.Get(year, day);
-		
-		string answerA = puzzle.SolvePartA(input);
-		string answerB = puzzle.SolvePartB(input);
-
-		return (answerA, answerB);
+		var input = _inputReader.ReadExample(puzzleNumber);
+		return SolvePuzzle(puzzleNumber, input, "Example");
 	}
 
-	private string[] ReadLines(int day, string type)
+
+	public (string, string) SolvePersonalPuzzle(PuzzleNumber puzzleNumber)
 	{
-		using var file = new StreamReader($"{_inputPath}/{day:D2}-{type}.txt");
-		var input = file.ReadToEnd().Split();
-		return input;
+		var input = _inputReader.ReadExample(puzzleNumber);
+		return SolvePuzzle(puzzleNumber, input, "Personal");
+
+	}
+	private (string, string) SolvePuzzle(PuzzleNumber puzzleNumber, string[] input, string kind)
+	{
+		var puzzle = _puzzles.Get(puzzleNumber);
+		
+		_output.Write($"({puzzleNumber.Year}) Solving Puzzle {puzzleNumber.Day}, {kind}, Part A...");
+		string answerA = puzzle.SolvePartA(input);
+
+		_output.WriteLine($"\r({puzzleNumber.Year}) Solved Puzzle {puzzleNumber.Day}, {kind}, Part A:   ");
+		_output.WriteLine(answerA);
+		_output.WriteLine();
+
+		_output.Write($"({puzzleNumber.Year}) Solving Puzzle {puzzleNumber.Day}, {kind}, Part B...");
+		string answerB = puzzle.SolvePartB(input);
+		_output.WriteLine($"\r({puzzleNumber.Year}) Solved Puzzle {puzzleNumber.Day}, {kind}, Part B:   ");
+		_output.WriteLine(answerB);
+		_output.WriteLine();
+
+		return (answerA, answerB);
 	}
 }

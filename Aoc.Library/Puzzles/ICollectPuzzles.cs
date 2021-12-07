@@ -1,26 +1,24 @@
 ﻿using System.Reflection;
 
-namespace Aoc.Library;
+namespace Aoc.Library.Puzzles;
 
 public interface ICollectPuzzles
 {
 	void Add(int year, Puzzle instance);
-	Puzzle Get(int year, int day);
 }
 
 // ReSharper disable once InconsistentNaming
 public static class ICollectPuzzlesExtensions
 {
-	public static void AddYear(this ICollectPuzzles collection, int year)
+	public static void AddAssembly(this ICollectPuzzles collection, int year, string assemblyName)
 	{
-		var puzzles = Assembly.Load("Aoc" + year)
+		var puzzles = Assembly.Load(assemblyName)
 			.GetTypes()
 			.Where(t => t.IsAssignableTo(typeof(Puzzle)));
 
 		foreach (var puzzleType in puzzles)
 		{
-			var puzzle = Activator.CreateInstance(puzzleType) as Puzzle;
-			if (puzzle == null)
+			if (Activator.CreateInstance(puzzleType) is not Puzzle puzzle)
 				throw new TypeLoadException("Cannot instance puzzle " + puzzleType.Name);
 
 			collection.Add(year, puzzle);

@@ -1,4 +1,4 @@
-﻿namespace Aoc.Library;
+﻿namespace Aoc.Library.Puzzles;
 
 public abstract class Puzzle
 {

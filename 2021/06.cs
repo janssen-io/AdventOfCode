@@ -1,4 +1,4 @@
-﻿using Aoc.Library;
+﻿using Aoc.Library.Puzzles;
 
 namespace Aoc2021;
 

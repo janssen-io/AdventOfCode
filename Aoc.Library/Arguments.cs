@@ -8,7 +8,7 @@ public class Arguments
 	{
 		_args = args;
 	}
-	public (int year, int day) GetPuzzleNumber(DateTime defaultNumber)
+	public PuzzleNumber GetPuzzleNumber(DateTime defaultNumber)
 	{
 		if (_args.Length != 2 || !int.TryParse(_args[0], out int year) || !int.TryParse(_args[1], out int day))
 		{
@@ -16,6 +16,6 @@ public class Arguments
 			year = defaultNumber.Year;
 		}
 
-		return (year, day);
+		return new PuzzleNumber(year, day);
 	}
 }

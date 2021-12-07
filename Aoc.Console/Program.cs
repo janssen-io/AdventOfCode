@@ -1,21 +1,16 @@
 ﻿using Aoc.Console;
 using Aoc.Library;
+using Aoc.Library.IO;
+using Aoc.Library.Puzzles;
 
-var puzzles = new PuzzleCollection(2021);
-var runner = new Runner("../../../2021", puzzles);
+var puzzles = new PuzzleCollection();
+puzzles.AddAssembly(2021, nameof(Aoc2021));
+
+var input = InputReaderFactory.CreateFileReader("../../../../2021");
+var runner = new Runner(input, Console.Out, puzzles);
 
 var arguments = new Arguments(args);
-(int year, int day) = arguments.GetPuzzleNumber(DateTime.Now);
+var number = arguments.GetPuzzleNumber(DateTime.Now);
 
-Console.WriteLine("Input");
-(string a, string b) = runner.Solve(year, day, "input");
-Console.WriteLine(a);
-Console.WriteLine(b);
-
-Console.WriteLine();
-
-Console.WriteLine("Example");
-(a, b) = runner.Solve(year, day, "example");
-Console.WriteLine(a);
-Console.WriteLine(b);
-
+_ = runner.SolveExamplePuzzle(number);
+_ = runner.SolvePersonalPuzzle(number);
