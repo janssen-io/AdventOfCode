@@ -3,7 +3,7 @@
 :- initialization(main, main).
 
 main() :-
-    increments([], 0, Count), # Add input here
+    increments([], 0, Count),
     write(Count).
 
 increments([_|[_|[_]]], C, C).
