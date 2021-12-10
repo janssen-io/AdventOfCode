@@ -7,9 +7,9 @@
 
 (defun get-row (line) (coerce line 'list))
 
-(defparameter *opens* (list #\( #\{ #\[ #\< ))
-(defparameter *closes* (list #\) #\} #\] #\> ))
-(defparameter *points* (list 3 1197 57 25137 ))
+(defparameter *opens* (list #\( #\[ #\{ #\< ))
+(defparameter *closes* (list #\) #\] #\} #\> ))
+(defparameter *points* (list 3 57 1197 25137 ))
 
 (defun index-of (x xs)
   (index-of-i x xs 0))
@@ -27,6 +27,7 @@
     0
     (nth (index-of closing *closes*) *points*)))
 
+; for part 1
 (defun check-line (line &optional stack)
   (let ((next (car line))
         (rest (cdr line)))
@@ -37,6 +38,29 @@
         (if (char= (pair next) (car stack))
           (check-line rest (cdr stack))
           next)))))
+
+; for part 2
+(defun remaining-stack (line &optional stack)
+  (let ((next (car line))
+        (rest (cdr line)))
+    (cond
+      ((null next) stack)
+      ((member next *opens*)  (remaining-stack rest (cons next stack)))
+      ((member next *closes*)
+        (if (char= (pair next) (car stack))
+          (remaining-stack rest (cdr stack))
+          nil)))))
+
+(defun auto-complete-score (stack score)
+  (if (null stack)
+    score
+    (auto-complete-score
+      (cdr stack)
+        (+
+          (* score 5)
+          (+ (index-of (car stack) *opens*) 1)))))
+
+(defun auto-complete (stack) (auto-complete-score stack 0))
 
 (defun filter (pred xs &optional rest)
   (cond
@@ -49,8 +73,19 @@
 
 (defun not-null (x) (not (null x)))
 
+; part 1
 (print
   (let ((lines  (mapcar #'get-row (read-file-as-lines "10-input.txt"))))
     (reduce #'+
       (mapcar #'score-of
-          (mapcar #'check-line lines)))))
+        (mapcar #'check-line lines)))))
+
+; part 2
+(print
+  (let ((lines  (mapcar #'get-row (read-file-as-lines "10-input.txt"))))
+    (let ((scores (sort
+            (mapcar #'auto-complete
+              (filter #'not-null
+                (mapcar #'remaining-stack lines)))
+            #'<)))
+      (nth (/ (- (length scores) 1) 2) scores))))
