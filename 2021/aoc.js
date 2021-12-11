@@ -36,6 +36,6 @@ String.prototype.repeat = function(n) {
 // This works for _most_ objects
 Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); };
 
-Object.prototype.get = function(x, y, defaultValue) { return this[`${x}_${y}`] === undefined ? defaultValue : this[`${x}_${y}`]; };
-Object.prototype.set = function(x, y, n) { this[`${x}_${y}`] = n; };
+Object.prototype.gets = function(x, y, defaultValue) { return this[`${x}_${y}`] === undefined ? defaultValue : this[`${x}_${y}`]; };
+Object.prototype.sets = function(x, y, n) { this[`${x}_${y}`] = n; };
 

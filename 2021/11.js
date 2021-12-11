@@ -17,11 +17,11 @@ function print(grid, highlight = true) {
     for(let y = 0; y < grid.dim; y++) {
         let row = '';
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) == 0 && highlight) {
+            if (grid.gets(x, y) == 0 && highlight) {
                 row += "\x1b[33m0\x1b[0m" //highlight 0s to make it easier for us
             }
             else {
-                row += grid.get(x, y);
+                row += grid.gets(x, y);
             }
         }
         console.log(row);
@@ -30,10 +30,10 @@ function print(grid, highlight = true) {
 }
 
 function increase(grid, x, y, n) {
-    grid.set(x, y, grid.get(x, y, 0) + n);
-    if (grid.get(x, y) > 9) {
+    grid.sets(x, y, grid.gets(x, y, 0) + n);
+    if (grid.gets(x, y) > 9) {
         flashes++;
-        grid.set(x, y, -1);
+        grid.sets(x, y, -1);
     }
 }
 
@@ -45,25 +45,25 @@ function initialIncrease(grid) {
     }
 }
 
-function resetToZero(grid) {
+function resetsToZero(grid) {
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) < 0)
-                grid.set(x, y, 0);
+            if (grid.gets(x, y) < 0)
+                grid.sets(x, y, 0);
         }
     }
 }
 
-function getEnergyFromNeighbours(grid) {
+function getsEnergyFromNeighbours(grid) {
     let increases = {};
     let hasIncreases = false;
-    // Calculate how much energy each octopus gets from its neighbours.
+    // Calculate how much energy each octopus getss from its neighbours.
     // We don't immediately increase the energy levels, instead we do it
-    // in a loop. Otherwise, only neighbours downstream will get recursive
+    // in a loop. Otherwise, only neighbours downstream will gets recursive
     // energy increases.
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) <= 0)  // skip those who are flashing
+            if (grid.gets(x, y) <= 0)  // skip those who are flashing
                 continue;
 
             let n = 0;
@@ -72,26 +72,26 @@ function getEnergyFromNeighbours(grid) {
                     if (dx == 0 && dy == 0) {
                         continue; // don't tag ourselves
                     }
-                    if (grid.get(x + dx, y + dy) === -1) {
+                    if (grid.gets(x + dx, y + dy) === -1) {
                         n++;
                         hasIncreases = true;
                     }
                 }
             }
-            increases.set(x, y, n);
+            increases.sets(x, y, n);
         }
     }
-    // We need to reset all lit-up octopi, so they are not counted in the next
+    // We need to resets all lit-up octopi, so they are not counted in the next
     // iteration of counting neighbours. Otherwise, they will increase the
     // energy of their neighbours multiple times.
-    resetToZero(grid);
+    resetsToZero(grid);
 
     // Calculate the energy levels after gaining energy from neighbours.
-    // This must be done after resetting, otherwise newly lit-up octopi will
-    // be reset too!
+    // This must be done after resetsting, otherwise newly lit-up octopi will
+    // be resets too!
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            let n = increases.get(x, y);
+            let n = increases.gets(x, y);
             if (n) {
                 increase(grid, x, y, n);
             }
@@ -107,18 +107,18 @@ function step(grid) {
     // While new octopi light up, check if other octopi light up too.
     let hasIncrease = true;
     while (hasIncrease) {
-        hasIncrease = getEnergyFromNeighbours(grid);
+        hasIncrease = getsEnergyFromNeighbours(grid);
     }
 
-    // Reset all lit-up octopi to 0 for the next step.
+    // Resets all lit-up octopi to 0 for the next step.
     // This ensures the state remains valid (all energy levels are between 0-9).
-    resetToZero(grid);
+    resetsToZero(grid);
 }
 
 function allZero(grid) {
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) !== 0) {
+            if (grid.gets(x, y) !== 0) {
                 return false;
             }
         }
@@ -132,7 +132,7 @@ function solve1(lines) {
     for(let y = 0; y < lines.length; y++) {
         let octos = lines[y].split('').map(x => +x);
         for(let x = 0; x < octos.length; x++) {
-            grid.set(x, y, octos[x]);
+            grid.sets(x, y, octos[x]);
         }
     }
     grid.dim = lines.length;

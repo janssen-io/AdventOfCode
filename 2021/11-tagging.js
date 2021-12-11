@@ -17,11 +17,11 @@ function print(grid, highlight = true) {
     for(let y = 0; y < grid.dim; y++) {
         let row = '';
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) == 0 && highlight) {
+            if (grid.gets(x, y) == 0 && highlight) {
                 row += "\x1b[33m0\x1b[0m" //highlight 0s to make it easier for us
             }
             else {
-                row += grid.get(x, y);
+                row += grid.gets(x, y);
             }
         }
         console.log(row);
@@ -30,8 +30,8 @@ function print(grid, highlight = true) {
 }
 
 function increase(grid, x, y, n) {
-    grid.set(x, y, grid.get(x, y, 0) + n);
-    if (grid.get(x, y) === 10) { //only flash if it just reached 10, any increase above are irrelevant.
+    grid.sets(x, y, grid.gets(x, y, 0) + n);
+    if (grid.gets(x, y) === 10) { //only flash if it just reached 10, any increase above are irrelevant.
         flashes++;
         tagNeighbours(grid, x, y);
     }
@@ -45,11 +45,11 @@ function initialIncrease(grid) {
     }
 }
 
-function resetToZero(grid) {
+function resetsToZero(grid) {
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) > 9)
-                grid.set(x, y, 0);
+            if (grid.gets(x, y) > 9)
+                grid.sets(x, y, 0);
         }
     }
 }
@@ -71,13 +71,13 @@ function tagNeighbours(grid, x, y) {
 
 function step(grid) {
     initialIncrease(grid);
-    resetToZero(grid);
+    resetsToZero(grid);
 }
 
 function allZero(grid) {
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.get(x, y) !== 0) {
+            if (grid.gets(x, y) !== 0) {
                 return false;
             }
         }
@@ -91,7 +91,7 @@ function solve1(lines) {
     for(let y = 0; y < lines.length; y++) {
         let octos = lines[y].split('').map(x => +x);
         for(let x = 0; x < octos.length; x++) {
-            grid.set(x, y, octos[x]);
+            grid.sets(x, y, octos[x]);
         }
     }
     grid.dim = lines.length;
