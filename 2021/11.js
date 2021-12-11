@@ -12,10 +12,6 @@ function p(input, solver) {
 // Helpers
 let flashes = 0;
 
-Object.prototype.get = function(x, y) { return this[`${x}_${y}`]; };
-Object.prototype.set = function(x, y, n) { this[`${x}_${y}`] = n; };
-Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); };
-
 function print(grid, highlight = true) {
     console.log('----------');
     for(let y = 0; y < grid.dim; y++) {
@@ -34,7 +30,7 @@ function print(grid, highlight = true) {
 }
 
 function increase(grid, x, y, n) {
-    grid.set(x, y, (grid.get(x, y) || 0) + n);
+    grid.set(x, y, grid.get(x, y, 0) + n);
     if (grid.get(x, y) > 9) {
         flashes++;
         grid.set(x, y, -1);
@@ -61,6 +57,10 @@ function resetToZero(grid) {
 function getEnergyFromNeighbours(grid) {
     let increases = {};
     let hasIncreases = false;
+    // Calculate how much energy each octopus gets from its neighbours.
+    // We don't immediately increase the energy levels, instead we do it
+    // in a loop. Otherwise, only neighbours downstream will get recursive
+    // energy increases.
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
             if (grid.get(x, y) <= 0)  // skip those who are flashing
@@ -81,7 +81,14 @@ function getEnergyFromNeighbours(grid) {
             increases.set(x, y, n);
         }
     }
+    // We need to reset all lit-up octopi, so they are not counted in the next
+    // iteration of counting neighbours. Otherwise, they will increase the
+    // energy of their neighbours multiple times.
     resetToZero(grid);
+
+    // Calculate the energy levels after gaining energy from neighbours.
+    // This must be done after resetting, otherwise newly lit-up octopi will
+    // be reset too!
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
             let n = increases.get(x, y);
@@ -94,12 +101,17 @@ function getEnergyFromNeighbours(grid) {
 }
 
 function step(grid) {
-    // Initial lighting step
+    // First add 1 to every octopus
     initialIncrease(grid);
+
+    // While new octopi light up, check if other octopi light up too.
     let hasIncrease = true;
     while (hasIncrease) {
         hasIncrease = getEnergyFromNeighbours(grid);
     }
+
+    // Reset all lit-up octopi to 0 for the next step.
+    // This ensures the state remains valid (all energy levels are between 0-9).
     resetToZero(grid);
 }
 
@@ -125,17 +137,17 @@ function solve1(lines) {
     }
     grid.dim = lines.length;
     print(grid);
-    for(let i = 1; i <= 100; i++) {
+    for(let i = 1; i <= 500; i++) {
         console.log('step', i);
         step(grid);
         print(grid);
         if (allZero(grid)) {
-            return i;
+            return {i, flashes};
         }
     }
 
     return flashes;
 }
 
-p('11-example.txt', solve1);
+p('11-input.txt', solve1);
 // p('11-input.txt', solve1);
