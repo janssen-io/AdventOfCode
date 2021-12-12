@@ -29,7 +29,7 @@ class Breadcrumb {
         this.name = node;
         this.crumbs = [...previous];
         this.isBig = node.toUpperCase() === node;
-        this.smallCounts = smallCounts.clone();
+        this.smallCounts = {...smallCounts};
     }
 
     add(name) {

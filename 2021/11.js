@@ -17,11 +17,11 @@ function print(grid, highlight = true) {
     for(let y = 0; y < grid.dim; y++) {
         let row = '';
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.gets(x, y) == 0 && highlight) {
+            if (grid.getCell(x, y) == 0 && highlight) {
                 row += "\x1b[33m0\x1b[0m" //highlight 0s to make it easier for us
             }
             else {
-                row += grid.gets(x, y);
+                row += grid.getCell(x, y);
             }
         }
         console.log(row);
@@ -30,10 +30,10 @@ function print(grid, highlight = true) {
 }
 
 function increase(grid, x, y, n) {
-    grid.sets(x, y, grid.gets(x, y, 0) + n);
-    if (grid.gets(x, y) > 9) {
+    grid.setCell(x, y, grid.getCell(x, y, 0) + n);
+    if (grid.getCell(x, y) > 9) {
         flashes++;
-        grid.sets(x, y, -1);
+        grid.setCell(x, y, -1);
     }
 }
 
@@ -48,8 +48,8 @@ function initialIncrease(grid) {
 function resetsToZero(grid) {
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.gets(x, y) < 0)
-                grid.sets(x, y, 0);
+            if (grid.getCell(x, y) < 0)
+                grid.setCell(x, y, 0);
         }
     }
 }
@@ -63,7 +63,7 @@ function getsEnergyFromNeighbours(grid) {
     // energy increases.
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.gets(x, y) <= 0)  // skip those who are flashing
+            if (grid.getCell(x, y) <= 0)  // skip those who are flashing
                 continue;
 
             let n = 0;
@@ -72,13 +72,13 @@ function getsEnergyFromNeighbours(grid) {
                     if (dx == 0 && dy == 0) {
                         continue; // don't tag ourselves
                     }
-                    if (grid.gets(x + dx, y + dy) === -1) {
+                    if (grid.getCell(x + dx, y + dy) === -1) {
                         n++;
                         hasIncreases = true;
                     }
                 }
             }
-            increases.sets(x, y, n);
+            increases.setCell(x, y, n);
         }
     }
     // We need to resets all lit-up octopi, so they are not counted in the next
@@ -91,7 +91,7 @@ function getsEnergyFromNeighbours(grid) {
     // be resets too!
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            let n = increases.gets(x, y);
+            let n = increases.getCell(x, y);
             if (n) {
                 increase(grid, x, y, n);
             }
@@ -118,7 +118,7 @@ function step(grid) {
 function allZero(grid) {
     for(let y = 0; y < grid.dim; y++) {
         for(let x = 0; x < grid.dim; x++) {
-            if (grid.gets(x, y) !== 0) {
+            if (grid.getCell(x, y) !== 0) {
                 return false;
             }
         }
@@ -132,7 +132,7 @@ function solve1(lines) {
     for(let y = 0; y < lines.length; y++) {
         let octos = lines[y].split('').map(x => +x);
         for(let x = 0; x < octos.length; x++) {
-            grid.sets(x, y, octos[x]);
+            grid.setCell(x, y, octos[x]);
         }
     }
     grid.dim = lines.length;

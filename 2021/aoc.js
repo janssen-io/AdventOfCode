@@ -33,9 +33,24 @@ String.prototype.repeat = function(n) {
         return this + this.repeat(n - 1);
 }
 
+String.prototype.red = function() { return this.colour(31); }
+String.prototype.green = function() { return this.colour(32); }
+String.prototype.yellow = function() { return this.colour(33); }
+
+String.prototype.colour = function(colourCode) {
+    return `\x1b[${colourCode}m${this}\x1b[0m`;
+}
+
 // This works for _most_ objects
 Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); };
 
-Object.prototype.gets = function(x, y, defaultValue) { return this[`${x}_${y}`] === undefined ? defaultValue : this[`${x}_${y}`]; };
-Object.prototype.sets = function(x, y, n) { this[`${x}_${y}`] = n; };
+Object.prototype.getCell = function(x, y, defaultValue) {
+    const storedValue = this[`${x}_${y}`];
+    // Check for undefined explicitly, because empty string and 0 are also falsey.
+    if (storedValue === undefined) {
+        return defaultValue;
+    }
+    return storedValue;
+};
+Object.prototype.setCell = function(x, y, n) { this[`${x}_${y}`] = n; };
 
