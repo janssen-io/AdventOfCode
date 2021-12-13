@@ -54,3 +54,14 @@ Object.prototype.getCell = function(x, y, defaultValue) {
 };
 Object.prototype.setCell = function(x, y, n) { this[`${x}_${y}`] = n; };
 
+Array.prototype.shuffle = function shuffleArray() {
+  let curId = this.length;
+  while (0 !== curId) {
+    curId--;
+    let randId = Math.floor(Math.random() * curId);
+    let tmp = this[curId];
+    this[curId] = this[randId];
+    this[randId] = tmp;
+  }
+  return this;
+}
