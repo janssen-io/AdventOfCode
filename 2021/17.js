@@ -39,7 +39,7 @@ var position = {x: 0, y: 0} ;
 let results = []
 for(let x = 0; x <= input.x_max; x++) {
     // if(x % 10 == 0) console.log({x});
-    for(let y = input.y_min - 2; y < 1000; y++) {
+    for(let y = input.y_min; y < 1000; y++) {
         results.push(simulate(position, {x, y}));
     }
 }
