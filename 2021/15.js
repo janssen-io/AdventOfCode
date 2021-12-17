@@ -78,7 +78,7 @@ function navigate(grid) {
         for(let n of neighbours) {
             let x = next.x + n.dx;
             let y = next.y + n.dy;
-            if(grid.getCell(x, y) === undefined)
+            if(grid.getCell(x, y) === undefined || seen.getCell(x, y))
                 continue;
 
             // Keep track of the crumbs is slower, because of copying
