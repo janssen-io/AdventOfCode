@@ -1,7 +1,5 @@
 // file reading
 const fs = require('fs');
-require('./aoc.js')
-const Data = require('./heap.js')
 
 function p(input, solver) {
     fs.readFile(input, 'utf8', function(error, data) {
@@ -10,24 +8,11 @@ function p(input, solver) {
     });
 }
 
-
 // Helpers
 class Message {
     constructor(message) {
         this._message = message;
         this._cursor = 0;
-    }
-
-    version() {
-        const version = this._message.slice(this._cursor, this._cursor + 3);
-        this._cursor += 3;
-        return version;
-    }
-
-    type() {
-        const type = this._message.slice(this._cursor, this._cursor + 3);
-        this._cursor += 3;
-        return partsToDec(typeId, 2);
     }
 
     read(end) {
@@ -58,6 +43,8 @@ class Message {
         return part;
     }
 
+    length() { return this._message.length - this._cursor; }
+
     remainingMessage() {
         return this._message.slice(this._cursor);
     }
@@ -84,8 +71,8 @@ function parseLiteral(rest) {
 
 function parsePacket(message) {
     if(message.isEOF()) {
-         message.read(); // eat the rest of the bytes
-         return;
+        //  message.read(); // eat the rest of the bits
+        return;
     }
 
     const header = message.read(3).join('');
@@ -111,8 +98,8 @@ function parseBody(header, type, message) {
             throw new Error("Total length cannot be 0");
         }
         let parsedPackets = [];
-        let startLength = message.remainingMessage().length;
-        while(startLength - totalLength < message.remainingMessage().length)
+        let startLength = message.length();
+        while(startLength - totalLength < message.length())
         {
             let parsed = parsePacket(message);
             parsedPackets.push(parsed);
@@ -135,67 +122,86 @@ function parseBody(header, type, message) {
     }
 }
 
-const LITERAL = 4;
-function sumHeader(tree, d = 0) {
+const NAMES = ["sum", "product", "min", "max", "literal", "gt", "lt", "eq"];
+const TYPES = NAMES.reduce( (p,n, i) => { p[n] = i; return p; }, {});
+
+// part 1
+function sumHeader(tree) {
     if(!tree) {
         return 0;
     }
 
     let h = parseInt(tree.header, 2);
-    if (tree.type === LITERAL) {
+    if (tree.type === TYPES.literal) {
         return h;
     }
     else {
-        return h + tree.children.reduce((p, n) => p + sumHeader(n, d + 1), 0);
+        return h + tree.children.reduce((p, n) => p + sumHeader(n), 0);
     }
 }
 
-function evaluate(tree, d = 0) {
-    if(!tree) {
-        return 0;
-    }
-
-    if (tree.type === LITERAL) {
+function evaluate(tree) {
+    if (tree.type === TYPES.literal) {
         return +tree.value;
     }
-    else if(tree.type === 0) { // sum
-        return tree.children.reduce((p, n) => p + evaluate(n, d + 1), 0);
+
+    let values = tree.children.map(evaluate);
+    if(values.indexOf(undefined) > -1) {
+        printAst(tree);
     }
-    else if(tree.type === 1) { // product
-        return tree.children.reduce((p, n) => p * evaluate(n, d + 1), 1);
-    }
-    else if(tree.type === 2) { // min
-        return tree.children.reduce((p, n) => {
-            let next = evaluate(n, d + 1);
-            return next < p ? next : p;
-        }, Number.MAX_VALUE);
-    }
-    else if(tree.type === 3) { // max
-        return tree.children.reduce((p, n) => {
-            let next = evaluate(n, d + 1);
-            return next > p ? next : p;
-        }, Number.MIN_VALUE);
-    }
-    else if(tree.type === 5) { // GT
-        return +evaluate(tree.children[0], d + 1) > +evaluate(tree.children[1], d + 1) ? 1 : 0;
-    }
-    else if(tree.type === 6) { // LT
-        return evaluate(tree.children[0], d + 1) < evaluate(tree.children[1], d + 1) ? 1 : 0;
-    }
-    else if(tree.type === 7) { // LT
-        return evaluate(tree.children[0], d + 1) == evaluate(tree.children[1], d + 1) ? 1 : 0;
+    switch(tree.type) {
+        case TYPES.sum:
+            return values.reduce((p, n) => p + n, 0);
+        case TYPES.product:
+            return values.reduce((p, n) => p * n, 1);
+        case TYPES.min:
+            return values.reduce((p, n) => n < p ? n : p, Number.MAX_VALUE);
+        case TYPES.max:
+            return values.reduce((p, n) => n > p ? n : p, Number.MIN_VALUE);
+        case TYPES.gt:
+            return values[0] > values[1]  ? 1 : 0;
+        case TYPES.lt:
+            return values[0] < values[1]  ? 1 : 0;
+        case TYPES.eq:
+            return values[0] == values[1] ? 1 : 0;
     }
 }
 
 function printAst(tree, d = 0) {
-    if (tree.type === LITERAL) {
-        console.log(" ".repeat(d * 2) + tree.header + ': literal(' + tree.value + ')');
+    if (tree.type === TYPES.literal) {
+        console.log(" ".repeat(d * 4) + tree.header + ': literal(value: ' + tree.value + ')');
     }
     else {
-        console.log(" ".repeat(d * 2) + tree.header + ': operator(' + tree.type + ')');
+        console.log(" ".repeat(d * 4) + tree.header + ': operator(kind: ' + NAMES[tree.type].toUpperCase() + ', size:' + tree.children.length + ')');
         for(let i = 0; i < tree.children.length; i++) {
-            printAst(tree.children[i], d + 1);
+            print(tree.children[i], d + 1);
         }
+    }
+}
+
+// Alternative solution: create javascript and evaluate it.
+function sum(...args) { return args.reduce((a,b) => a + b); }
+function product(...args) { return args.reduce((a,b) => a * b); }
+function min(...args) { return args.reduce((a,b) => a < b ? a : b); }
+function max(...args) { return args.reduce((a,b) => a > b ? a : b); }
+function gt(...args) { return args.reduce((a,b) => a > b  ? 1 : 0); }
+function lt(...args) { return args.reduce((a,b) => a < b  ? 1 : 0); }
+function eq(...args) { return args.reduce((a,b) => a == b ? 1 : 0); }
+
+function printJs(tree, d = 0, indent = false) {
+    if (tree.type === TYPES.literal) {
+        return '\n ' + ' '.repeat(d * 2 * indent) + tree.value;
+    }
+    else {
+        let str = '\n ';
+        str += " ".repeat(d * 2 * indent) + NAMES[tree.type] + '(';
+        let cs = [];
+        for(let i = 0; i < tree.children.length; i++) {
+            cs.push(printJs(tree.children[i], d + 1));
+        }
+        str += cs.join(', ');
+        str += ')';
+        return str;
     }
 }
 
@@ -206,7 +212,8 @@ function solve(lines) {
     const reader = new Message(message);
 
     let ast = parsePacket(reader);
-    printAst(ast);
+    // console.log(printJs(ast).split('\n').join(''));
+    // return eval(printJs(ast));
     return evaluate(ast);
 }
 
