@@ -24,7 +24,6 @@ class SnailFishReader {
             return part;
         }
         if (this._cursor + end > this._message.length) {
-            console.log('read', {m: this._message.length, c: this._cursor})
             throw new Error("Cannot read " + end + "characters, remaining length is " + (this._message.length - this._cursor));
         }
 
@@ -33,6 +32,7 @@ class SnailFishReader {
         return part;
     }
 
+    // Reads up to and including next number or until EOF
     readNextNumber() {
         let num = undefined;
         let opens = 0;
@@ -59,7 +59,23 @@ class SnailFishReader {
                     break;
             }
         }
-        return { number: +num, depth: this._depth, opens, closes };
+        let n = { number: +num, depth: this._depth, opens, closes };
+        return n;
+    }
+
+    moveBackToLastNumber() {
+        for(let i = this._cursor - 1; i >= 0; i--) {
+            if (!isNaN(this._message[i])) {
+                let num;
+                do {
+                    i = i - 1;
+                    num = this._message[i];
+                }
+                while(!isNaN(num));
+                this._cursor = i + 1;
+                return;
+            }
+        }
     }
 
     peak(end) {
@@ -88,6 +104,10 @@ class SnailFishBuilder {
     }
 
     writeNumber(number, { closes, opens } = { closes: 0, opens: 0 }) {
+        // if (this._isCarrying) {
+        //     this._isCarrying = false;
+        //     closes--;
+        // }
         this._opens += opens - closes;
         let text = ']'.repeat(closes) + '['.repeat(opens) + (number + this._nextNumber);
         this._nextNumber = 0;
@@ -96,6 +116,7 @@ class SnailFishBuilder {
 
     carryToNextNumber(next) {
         this._nextNumber = next;
+        this._isCarrying = true;
     }
 
     tryAddToPreviousNumber(last) {
@@ -126,15 +147,37 @@ class SnailFishBuilder {
     }
 }
 
-function reduce(builder, reader, singleStep = false) {
+function reduceExplode(builder, reader, hasExploded = false) {
     let left = reader.readNextNumber();
-    let hasExploded = false;
-    let hasSplit = false;
     if (!isNaN(left.number) && left.depth == 4) {
         explode(builder, left, reader);
         hasExploded = true;
     }
-    else if (left.number >= 10) {
+    else if (!isNaN(left.number)) {
+        builder.writeNumber(left.number, { ...left });
+    }
+
+    if (hasExploded) {
+        return reduceExplode(
+            new SnailFishBuilder(),
+            new SnailFishReader(builder + reader.read()),
+            false);
+    }
+    else if(!reader.isEOF()) {
+        return reduceExplode(builder, reader, false)
+    }
+
+    if(reader.isEOF()) { // check for more explosions
+        return {
+            hasExploded,
+            number: builder.toString() + ']'.repeat(builder._opens) + reader.read()
+        }
+    }
+}
+
+function reduceSplit(builder, reader, hasSplit = false) {
+    let left = reader.readNextNumber();
+    if (left.number >= 10) {
         split(builder, left);
         hasSplit = true;
     }
@@ -142,48 +185,62 @@ function reduce(builder, reader, singleStep = false) {
         builder.writeNumber(left.number, { ...left });
     }
 
-    // returns
-    if (singleStep) {
+    if (!reader.isEOF() && !hasSplit) { // check for more splits further down the input{
+        return reduceSplit(builder, reader, hasSplit);
+    }
+    else if(reader.isEOF()) {  // return so we can check for explosions again
         return {
-            builder, reader, didAction, isEnd: reader.isEOF(),
-            result: builder.toString() + reader.peak() // prevent side-effects
+            hasSplit,
+            number: builder.toString() + ']'.repeat(builder._opens)
         }
     }
-    if(hasExploded || hasSplit) { // restart
-        let soFar = builder.toString() ;
-        let todo = reader.read();
-        console.log((hasExploded ? 'exploded: ' : 'splitted: ') + (soFar + ' ' + todo).yellow());
-        return reduce(new SnailFishBuilder(), new SnailFishReader(soFar + todo));
+    else {
+        return {
+            hasSplit,
+            number: builder.toString() + reader.read()
+        }
     }
-    else if (reader.isEOF()) { // finished
-        return builder.toString() + ']'.repeat(builder._opens);
-    }
-    else { // continue
-        return reduce(builder, reader);
-    }
+
 }
 
+function reduce(input) {
+    let newNumber = input;
+    let checkAgain = false;
+    do {
+        let explosions = reduceExplode(new SnailFishBuilder(), new SnailFishReader(newNumber));
+        var splits = reduceSplit(new SnailFishBuilder(), new SnailFishReader(explosions.number));
+        newNumber = splits.number;
+        checkAgain = splits.hasSplit;
+    }
+    while(checkAgain);
+
+    return newNumber;
+}
+
+// Explode [left, b]
 function explode(builder, left, reader) {
-    // add to previous number
-    builder.tryAddToPreviousNumber(left.number, { ...left }); // does nothing if no last number
+    builder.tryAddToPreviousNumber(left.number, { ...left });
 
     // replace exploding pair with 0
+    //    closes opens one less, as [left, b] is replaced with 0
     builder.writeNumber(0, { closes: left.closes , opens: left.opens - 1})
 
+    // read b (of [left, b]) as right
     let right = reader.readNextNumber();
-    if (!reader.isEOF()) {
-        reader.read(1); // finish reading this pair by chomping the closing bracket
-    }
-    else {
-        console.error({left, right, soFar: builder.toString()});
-        throw new Error("Unexpected end of file while reading exploding pair.");
-    }
+    // if (!reader.isEOF()) {
+    //     reader.read(1); // finish reading this pair by chomping the closing bracket
+    // }
+    // else {
+    //     console.error({left, right, soFar: builder.toString()});
+    //     throw new Error("Unexpected end of file while reading exploding pair.");
+    // }
 
     let firstRight = reader.readNextNumber();
     // if there is a next number, add the right number to it and write it
     if (!isNaN(firstRight.number)) {
         builder.carryToNextNumber(right.number);
-        builder.writeNumber(firstRight.number, { opens: firstRight.opens, closes: firstRight.closes})
+        // one less closes, because [a, b] turned into 0
+        builder.writeNumber(firstRight.number, { opens: firstRight.opens, closes: firstRight.closes - 1})
     }
     // else we are at the end
 }
@@ -198,29 +255,41 @@ function split(builder, number) {
     builder.writeNumber(left, { closes: number.closes, opens: number.opens + 1}); // extra open for new pair
     builder.writeNumber(right);
     builder.closePair(); // close the new pair
-    // console.log('post: '+ builder.toString())
+}
+
+function magnitude(snails, d = 0) {
+    let left, right;
+    if (Array.isArray(snails[0])) {
+        left = magnitude(snails[0], d + 1)
+    }
+    else {
+        left = snails[0]
+    }
+
+    if (Array.isArray(snails[1])) {
+        right = magnitude(snails[1], d + 1)
+    }
+    else {
+        right = snails[1]
+    }
+
+    return 3 * left + 2 * right;
 }
 
 function add(a, b) {
     let _a = eval(a);
     let _b = eval(b);
     let addition =  JSON.stringify([_a, _b])
-    console.debug('+' + addition);
+    // console.debug('+' + addition);
     return addition;
 }
 
 function r(a, b) {
     let addition = add(a,b);
-    return reduce(new SnailFishBuilder(), new SnailFishReader(addition));
-}
-
-function newReduce(line) {
-    return reduce(new SnailFishBuilder(), new SnailFishReader(line));
+    return reduce(addition);
 }
 
 // solvers
-
-
 function solve(lines) {
     // test("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
     // test("[7,[6,[5,[4,[3,2]]]]", "[7,[6,[5,[7,0]]]]")
@@ -233,27 +302,36 @@ function solve(lines) {
     // test("[[[[1,1],[2,2]],[3,3]],[4,4]]", "[[[[1,1],[2,2]],[3,3]],[4,4]]")
     // test("[[[[[1,1],[2,2]],[3,3]],[4,4]],[5,5]]", "[[[[3,0],[5,3]],[4,4]],[5,5]]")
     // sumtest(["[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"], "[[[[5,0],[7,4]],[5,5]],[6,6]]")
-    test("[[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]", "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")
-    return;
+    // test("[[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]", "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")
+    // return "ALL TESTS PASSED";
     lines = lines.map(l => l.trim());
 
     // lines = ["[[[0,[4,5]],[0,0]], 3]", "[7, 0]"];
     // console.log("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]");
-    // return newReduce("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]");
-    let result = lines[0];
-    console.log(result);
-    for(let i = 1; i < lines.length; i++) {
-        console.log(lines[i]);
-        result = r(result, lines[i]);
-        console.log(result);
-        console.log();
+    let highest = 0;
+    for(let a = 0; a < lines.length; a++) {
+        for (let b = 0; b < lines.length; b++) {
+            if (a == b)
+                continue;
+            let number = r(lines[a], lines[b])
+            let mag = magnitude(eval(number));
+            highest = mag > highest ? mag : highest;
+        }
     }
-    return result;
+    console.log((highest + '').green())
+    process.exit();
+
+    let result = lines[0];
+    for(let i = 1; i < lines.length; i++) {
+        result = r(result, lines[i]);
+    }
+    console.log(result.yellow())
+    return magnitude(eval(result));
 }
 
 function test(input, expect) {
     console.log('   input:', input)
-    let result = newReduce(input);
+    let result = reduce(input);
     if (expect != result) {
         console.error({ input, result, expect });
         throw new Error("Test Failed.")

@@ -27,6 +27,9 @@ String.prototype.intersect = function(other) {
 }
 
 String.prototype.repeat = function(n) {
+    if(isNaN(n)) {
+        throw new Error(n + ' is not a number')
+    }
     if (n <= 0)
         return "";
     else
