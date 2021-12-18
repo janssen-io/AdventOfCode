@@ -104,10 +104,6 @@ class SnailFishBuilder {
     }
 
     writeNumber(number, { closes, opens } = { closes: 0, opens: 0 }) {
-        // if (this._isCarrying) {
-        //     this._isCarrying = false;
-        //     closes--;
-        // }
         this._opens += opens - closes;
         let text = ']'.repeat(closes) + '['.repeat(opens) + (number + this._nextNumber);
         this._nextNumber = 0;
@@ -227,13 +223,6 @@ function explode(builder, left, reader) {
 
     // read b (of [left, b]) as right
     let right = reader.readNextNumber();
-    // if (!reader.isEOF()) {
-    //     reader.read(1); // finish reading this pair by chomping the closing bracket
-    // }
-    // else {
-    //     console.error({left, right, soFar: builder.toString()});
-    //     throw new Error("Unexpected end of file while reading exploding pair.");
-    // }
 
     let firstRight = reader.readNextNumber();
     // if there is a next number, add the right number to it and write it
@@ -246,13 +235,13 @@ function explode(builder, left, reader) {
 }
 
 function split(builder, number) {
-    // console.group('SPLIT');
-    // console.log('SPLIT');
-    // console.log({number})
     let left = Math.floor(number.number / 2);
     let right = Math.ceil(number.number / 2);
-    // console.log('pre: '+ builder.toString())
-    builder.writeNumber(left, { closes: number.closes, opens: number.opens + 1}); // extra open for new pair
+
+    builder.writeNumber(left, {
+        closes: number.closes,
+         opens: number.opens + 1 // extra open for new pair
+    });
     builder.writeNumber(right);
     builder.closePair(); // close the new pair
 }
@@ -280,7 +269,6 @@ function add(a, b) {
     let _a = eval(a);
     let _b = eval(b);
     let addition =  JSON.stringify([_a, _b])
-    // console.debug('+' + addition);
     return addition;
 }
 
@@ -290,26 +278,30 @@ function r(a, b) {
 }
 
 // solvers
+function runTests() {
+    test("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
+    test("[7,[6,[5,[4,[3,2]]]]", "[7,[6,[5,[7,0]]]]")
+    test("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")
+    test("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
+    test("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
+    test("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]", "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
+    test("[30]", "[[[7,8],[7,8]]]")
+    test("[[[[[1,2],[3,4]]]]]", "[[[[5,0]]]]")
+    test("[[[[1,1],[2,2]],[3,3]],[4,4]]", "[[[[1,1],[2,2]],[3,3]],[4,4]]")
+    test("[[[[[1,1],[2,2]],[3,3]],[4,4]],[5,5]]", "[[[[3,0],[5,3]],[4,4]],[5,5]]")
+    sumtest(["[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"], "[[[[5,0],[7,4]],[5,5]],[6,6]]")
+    test("[[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]", "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")
+    console.log("ALL TESTS PASSED".green());
+    process.exit();
+}
 function solve(lines) {
-    // test("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
-    // test("[7,[6,[5,[4,[3,2]]]]", "[7,[6,[5,[7,0]]]]")
-    // test("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")
-    // test("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
-    // test("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
-    // test("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]", "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
-    // test("[30]", "[[[7,8],[7,8]]]")
-    // test("[[[[[1,2],[3,4]]]]]", "[[[[5,0]]]]")
-    // test("[[[[1,1],[2,2]],[3,3]],[4,4]]", "[[[[1,1],[2,2]],[3,3]],[4,4]]")
-    // test("[[[[[1,1],[2,2]],[3,3]],[4,4]],[5,5]]", "[[[[3,0],[5,3]],[4,4]],[5,5]]")
-    // sumtest(["[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"], "[[[[5,0],[7,4]],[5,5]],[6,6]]")
-    // test("[[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]", "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")
-    // return "ALL TESTS PASSED";
+    // runTests();
     lines = lines.map(l => l.trim());
 
-    // lines = ["[[[0,[4,5]],[0,0]], 3]", "[7, 0]"];
-    // console.log("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]");
+    // part 2
     let highest = 0;
     for(let a = 0; a < lines.length; a++) {
+        console.log(('' + a).padStart(2, 0) + '/' + lines.length)
         for (let b = 0; b < lines.length; b++) {
             if (a == b)
                 continue;
@@ -321,6 +313,7 @@ function solve(lines) {
     console.log((highest + '').green())
     process.exit();
 
+    // part 1
     let result = lines[0];
     for(let i = 1; i < lines.length; i++) {
         result = r(result, lines[i]);
@@ -333,7 +326,9 @@ function test(input, expect) {
     console.log('   input:', input)
     let result = reduce(input);
     if (expect != result) {
-        console.error({ input, result, expect });
+        console.log('input: ', input);
+        console.log('output: ', result.red());
+        console.log('expect: ', expect.green());
         throw new Error("Test Failed.")
     }
 }
