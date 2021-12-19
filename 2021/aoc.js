@@ -55,7 +55,34 @@ Object.prototype.getCell = function(x, y, defaultValue) {
     }
     return storedValue;
 };
-Object.prototype.setCell = function(x, y, n) { this[`${x}_${y}`] = n; };
+
+Object.prototype.getCell3d = function(x, y, z, defaultValue) {
+    const storedValue = this[`${x}_${y}_${z}`];
+    // Check for undefined explicitly, because empty string and 0 are also falsey.
+    if (storedValue === undefined) {
+        return defaultValue;
+    }
+    return storedValue;
+};
+
+Object.prototype.setCell = function(x, y, n = true) {
+    this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y };
+    this.dimensions.min_x = Math.min(this.dimensions.min_x, x);
+    this.dimensions.min_y = Math.min(this.dimensions.min_y, y);
+    this.dimensions.max_x = Math.max(this.dimensions.max_x, x);
+    this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
+     this[`${x}_${y}`] = n;
+};
+Object.prototype.setCell3d = function(x, y, z, n = true) {
+    this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y, min_z: z, max_z: z };
+    this.dimensions.min_x = Math.min(this.dimensions.min_x, x);
+    this.dimensions.min_y = Math.min(this.dimensions.min_y, y);
+    this.dimensions.min_z = Math.min(this.dimensions.min_z, z);
+    this.dimensions.max_x = Math.max(this.dimensions.max_x, x);
+    this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
+    this.dimensions.max_z = Math.max(this.dimensions.max_z, z);
+     this[`${x}_${y}_${z}`] = n;
+};
 
 Array.prototype.shuffle = function shuffleArray() {
   let curId = this.length;
