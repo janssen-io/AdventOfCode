@@ -14,6 +14,14 @@ Array.prototype.intersect = function(other) {
     return this.filter(c => Array.from(other).includes(c));
 }
 
+Array.prototype.repeat = function(n) {
+    let result = [];
+    for(let i = 0; i < n; i++) {
+        result = result.concat(this);
+    }
+    return result;
+}
+
 String.prototype.sort = function() {
     return this.split('').sort().join('');
 }
@@ -56,6 +64,14 @@ Object.prototype.getCell = function(x, y, defaultValue) {
     return storedValue;
 };
 
+Object.prototype.getCellWrapped = function(x, y, defaultValue) {
+    if (x > this.dimensions.max_x) x = 0;
+    if (y > this.dimensions.max_y) y = 0;
+    if (x < this.dimensions.min_x) x = this.dimensions.max_x;
+    if (y < this.dimensions.min_y) y = this.dimensions.max_y;
+    return this.getCell(x, y, defaultValue);
+};
+
 Object.prototype.getCell3d = function(x, y, z, defaultValue) {
     const storedValue = this[`${x}_${y}_${z}`];
     // Check for undefined explicitly, because empty string and 0 are also falsey.
@@ -65,6 +81,44 @@ Object.prototype.getCell3d = function(x, y, z, defaultValue) {
     return storedValue;
 };
 
+Array.prototype.getCell = function(x, y) {
+    if (this.dimensions.x == undefined) throw new Error('Dimensions not set');
+    if (this.dimensions.y == undefined) throw new Error('Dimensions not set');
+    if(x >= this.dimensions.x) throw new Error(`Out of bounds: ${x} >= ${this.dimensions.x}`);
+    if(y >= this.dimensions.y) throw new Error(`Out of bounds: ${y} >= ${this.dimensions.y}`);
+
+    return this[y * this.dimensions.x + x];
+}
+
+Array.prototype.setCell = function(x, y, n) {
+    if (this.dimensions.x == undefined) throw new Error('Dimensions not set');
+    if (this.dimensions.y == undefined) throw new Error('Dimensions not set');
+    if(x >= this.dimensions.x) throw new Error(`Out of bounds: ${x} >= ${this.dimensions.x}`);
+    if(y >= this.dimensions.y) throw new Error(`Out of bounds: ${y} >= ${this.dimensions.y}`);
+
+    this[y * this.dimensions.x + x] = n;
+}
+
+Array.prototype.getCellWrapped = function(x, y) {
+    if (this.dimensions.x == undefined) throw new Error('Dimensions not set');
+    if (this.dimensions.y == undefined) throw new Error('Dimensions not set');
+
+    x = (x + this.dimensions.x) % this.dimensions.x;
+    y = (y + this.dimensions.y) % this.dimensions.y;
+
+    return this[y * this.dimensions.x + x];
+}
+
+Array.prototype.setCellWrapped = function(x, y, n) {
+    if (this.dimensions.x == undefined) throw new Error('Dimensions not set');
+    if (this.dimensions.y == undefined) throw new Error('Dimensions not set');
+
+    x = (x + this.dimensions.x) % this.dimensions.x;
+    y = (y + this.dimensions.y) % this.dimensions.y;
+
+    this[y * this.dimensions.x + x] = n;
+}
+
 Object.prototype.setCell = function(x, y, n = true) {
     this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y };
     this.dimensions.min_x = Math.min(this.dimensions.min_x, x);
@@ -73,6 +127,15 @@ Object.prototype.setCell = function(x, y, n = true) {
     this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
      this[`${x}_${y}`] = n;
 };
+
+Object.prototype.setCellWrapped = function(x, y, n = true) {
+    if (x > this.dimensions.max_x) x = 0;
+    if (y > this.dimensions.max_y) y = 0;
+    if (x < this.dimensions.min_x) x = this.dimensions.max_x;
+    if (y < this.dimensions.min_y) y = this.dimensions.max_y;
+    return this.setCell(x, y, n);
+};
+
 Object.prototype.setCell3d = function(x, y, z, n = true) {
     this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y, min_z: z, max_z: z };
     this.dimensions.min_x = Math.min(this.dimensions.min_x, x);
@@ -81,7 +144,7 @@ Object.prototype.setCell3d = function(x, y, z, n = true) {
     this.dimensions.max_x = Math.max(this.dimensions.max_x, x);
     this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
     this.dimensions.max_z = Math.max(this.dimensions.max_z, z);
-     this[`${x}_${y}_${z}`] = n;
+    this[`${x}_${y}_${z}`] = n;
 };
 
 Array.prototype.shuffle = function shuffleArray() {
