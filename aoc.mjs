@@ -1,3 +1,10 @@
+// file reading
+import {readFile} from 'fs';
+
+Array.prototype.numSort = function() {
+    return this.sort((a,b) => a-b);
+}
+
 Array.prototype.sum = function() {
     return this.reduce((p,n) => +p + +n);
 }
@@ -20,6 +27,24 @@ Array.prototype.repeat = function(n) {
         result = result.concat(this);
     }
     return result;
+}
+
+Array.prototype.group = function(delim = '', map) {
+    if (typeof(map) !== 'function') {
+        map = x => x;
+    }
+    const groups = [];
+    let group = [];
+    for(let line of this) {
+        if (line == delim) {
+            groups.push(group);
+            group = [];
+        }
+        else {
+            group.push(map(line))
+        }
+    }
+    return groups;
 }
 
 String.prototype.sort = function() {
@@ -158,3 +183,16 @@ Array.prototype.shuffle = function shuffleArray() {
   }
   return this;
 }
+
+function readAndSolve(input, solver) {
+    if (!input) {
+        const d = ('' + new Date().getDate()).padStart(2, '0');
+        input = `${d}.input`;
+    }
+    readFile(input, 'utf8', function(error, data) {
+        var lines = data.replace(/\r/g, '').trim().split('\n');
+        console.log(input, 'answer: '.green(), solver(lines));
+    });
+}
+
+export { readAndSolve }
