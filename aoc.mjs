@@ -44,6 +44,9 @@ Array.prototype.group = function(delim = '', map) {
             group.push(map(line))
         }
     }
+    if (group.length > 0) { // push the last group in case there is no delimiting line after the final group
+        groups.push(group);
+    }
     return groups;
 }
 
@@ -172,6 +175,133 @@ Object.prototype.setCell3d = function(x, y, z, n = true) {
     this[`${x}_${y}_${z}`] = n;
 };
 
+class Scanner {
+    constructor(message, isEof) {
+        this._message = message;
+        this._cursor = 0;
+        this._isEof = isEof;
+    }
+
+    /**
+     * Reads the next characters from the message and updates the cursor position.
+     * @param {number} length The number of characters to read
+     * @returns {string} The characters from the current cursor position
+     */
+    read(length) {
+        let part;
+        if (length === undefined) {
+            part = this._message.slice(this._cursor); // read until the end
+            this._cursor = this._message.length;
+        } else {
+            if (this._cursor + length > this._message.length) {
+                throw new Error("Cannot read " + length + "bits, remaining length is " + (this._message.length - this._cursor));
+            }
+            part = this._message.slice(this._cursor, this._cursor + length);
+            this._cursor += length;
+        }
+        return part;
+    }
+
+    /**
+     * Shows the next characters from the message without updating the cursor position.
+     * @param {number} end The number of characters to peek
+     * @returns {string} The characters from the current cursor position
+     */
+    peak(end) {
+        let part;
+        if (end === undefined) {
+            part = this._message.slice(this._cursor);
+        } else {
+            if (this._cursor + end > this._message.length) {
+                throw new Error("Cannot peak " + end + "bits, remaining length is " + (this._message.length - this._cursor));
+            }
+            part = this._message.slice(this._cursor, this._cursor + end);
+        }
+        return part;
+    }
+
+    /**
+     * @returns The remaining length of the message
+     */
+    length() { return this._message.length - this._cursor; }
+
+    /**
+     * Peeks at the characters of the message from the current cursor position.
+     * @returns The remainder of the message from the current cursor position.
+     */
+    remainingMessage() {
+        return this._message.slice(this._cursor);
+    }
+
+    isEOF() {
+        if (this.is_Eof === undefined) {
+            return this._cursor === this._message.length;
+        }
+        else {
+            return this._isEof(arguments) 
+        }
+    }
+}
+
+/**
+ * 
+ * @param {Array} q Array with items in the queue. Should contain a single item to start with.
+ * @param {function} genStates Generate the next states based on the current item
+ * @param {function} isMatch Determine whether the current state is a viable solution
+ * @param {function} key Generate a hask-key to add the current item to a visited list
+ * @param {function} show Create a debug representation of the item
+ * @returns 
+ */
+function bfs(q, genStates, isMatch, key, show = undefined) {
+    return search(q, genStates, isMatch, key, show, Array.prototype.shift)
+}
+
+/**
+ * 
+ * @param {Array} q Array with items in the queue. Should contain a single item to start with.
+ * @param {function} genStates Generate the next states based on the current item
+ * @param {function} isMatch Determine whether the current state is a viable solution
+ * @param {function} key Generate a hask-key to add the current item to a visited list
+ * @param {function} show Create a debug representation of the item
+ * @returns 
+ */
+function dfs(q, genStates, isMatch, key, show = undefined) {
+    return search(q, genStates, isMatch, key, show, Array.prototype.pop)
+}
+
+/**
+ * 
+ * @param {Array} q Array with items in the queue. Should contain a single item to start with.
+ * @param {function} genStates Generate the next states based on the current item
+ * @param {function} isMatch Determine whether the current state is a viable solution
+ * @param {function} key Generate a hask-key to add the current item to a visited list
+ * @param {function} show Create a debug representation of the item
+ * @param {function} next Grab the next item from the queue/stack (Array.shift or Array.pop respectively for bfs/dfs) 
+ * @returns 
+ */
+function search(q, genStates, isMatch, key, show, next) {
+    const solutions = [];
+    const seen = {};
+    let i = 0;
+    while(q.length) {
+        const state = next.apply(q);
+        let k = key(state);
+        if  (seen[k]) continue;
+        else seen[k] = true;
+
+        i++;
+        if (show) {
+            console.log({i, k, state: show(state), seen });
+        }
+
+        if (isMatch(state)) {
+            solutions.push(state);
+        }
+        q = q.concat(genStates(state));
+    }
+    return solutions;
+}
+
 Array.prototype.shuffle = function shuffleArray() {
   let curId = this.length;
   while (0 !== curId) {
@@ -195,4 +325,4 @@ function readAndSolve(input, solver) {
     });
 }
 
-export { readAndSolve }
+export { readAndSolve, Scanner, dfs, bfs }
