@@ -29,6 +29,10 @@ Array.prototype.repeat = function(n) {
     return result;
 }
 
+Array.prototype.last = function() { 
+    return this[this.length - 1]
+};
+
 Array.prototype.group = function(delim = '', map) {
     if (typeof(map) !== 'function') {
         map = x => x;
@@ -49,6 +53,10 @@ Array.prototype.group = function(delim = '', map) {
     }
     return groups;
 }
+
+String.prototype.last = function() { 
+    return this[this.length - 1]
+};
 
 String.prototype.sort = function() {
     return this.split('').sort().join('');
@@ -314,13 +322,14 @@ Array.prototype.shuffle = function shuffleArray() {
   return this;
 }
 
-function readAndSolve(input, solver) {
+function readAndSolve(input, solver, delim = '\n') {
     if (!input) {
         const d = ('' + new Date().getDate()).padStart(2, '0');
         input = `${d}.input`;
     }
     readFile(input, 'utf8', function(error, data) {
-        var lines = data.replace(/\r/g, '').trim().split('\n');
+        if(error) console.error(error)
+        var lines = data.replace(/\r/g, '').trim().split(delim);
         console.log(input, 'answer: '.green(), solver(lines));
     });
 }

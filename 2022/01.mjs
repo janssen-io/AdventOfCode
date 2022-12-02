@@ -12,4 +12,4 @@ function solve(lines) {
     return {p1, p2};
 }
 
-readAndSolve(process.argv[2] || '01-input.txt', solve);
+readAndSolve(process.argv[2] || '01.input', solve);
