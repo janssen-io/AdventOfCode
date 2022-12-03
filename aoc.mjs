@@ -25,6 +25,30 @@ Array.prototype.intersect = function(other) {
     return this.filter(c => Array.from(other).includes(c));
 }
 
+
+Array.prototype.indexOfP = function(predicate) {
+    for(let i = 0; i < this.length; i++) {
+        if (predicate(this[i])) return i;
+    }
+    return -1;
+}
+
+Array.prototype.skipWhile = function(predicate) {
+    let firstIndexNotMatch = this.indexOfP(x => !(predicate(x)))
+    if (firstIndexNotMatch === -1) {
+        return Array.from(this);
+    }
+    return this.slice(firstIndexNotMatch);
+}
+
+Array.prototype.takeWhile = function(predicate) {
+    let firstIndexNotMatch = this.indexOfP(x => !(predicate(x)))
+    if (firstIndexNotMatch === -1) {
+        return [];
+    }
+    return this.slice(0, firstIndexNotMatch);
+}
+
 Array.prototype.repeat = function(n) {
     let result = [];
     for(let i = 0; i < n; i++) {
