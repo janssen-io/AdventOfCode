@@ -5,6 +5,10 @@ Array.prototype.numSort = function() {
     return this.sort((a,b) => a-b);
 }
 
+Array.prototype.unique = function() {
+    return this.filter((value, index, self) => self.indexOf(value) === index)
+}
+
 Array.prototype.sum = function() {
     return this.reduce((p,n) => +p + +n);
 }
