@@ -33,6 +33,14 @@ Array.prototype.repeat = function(n) {
     return result;
 }
 
+Array.prototype.groupsOfLength = function(n) {
+    let result = [];
+    for(let i = 0; i < this.length; i += n) {
+        result.push(this.slice(i, i + n));
+    }
+    return result;
+}
+
 Array.prototype.last = function() { 
     return this[this.length - 1]
 };
