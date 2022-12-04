@@ -13,7 +13,7 @@ function solve(lines) {
         .sum();
 
     const p2 = lines
-        .groupsOfLength(3)
+        .chunk(3)
         .map(group => group.reduce((acc, backpack) => acc.intersect(backpack)))
         .map(getValue)
         .sum();

@@ -25,6 +25,13 @@ Array.prototype.intersect = function(other) {
     return this.filter(c => Array.from(other).includes(c));
 }
 
+function range(start, end) {
+    let result = [];
+    for(let i = start; i < end; i++) {
+        result.push(i)
+    }
+    return result;
+}
 
 Array.prototype.indexOfP = function(predicate) {
     for(let i = 0; i < this.length; i++) {
@@ -57,7 +64,7 @@ Array.prototype.repeat = function(n) {
     return result;
 }
 
-Array.prototype.groupsOfLength = function(n) {
+Array.prototype.chunk = function(n) {
     let result = [];
     for(let i = 0; i < this.length; i += n) {
         result.push(this.slice(i, i + n));
@@ -69,14 +76,17 @@ Array.prototype.last = function() {
     return this[this.length - 1]
 };
 
-Array.prototype.group = function(delim = '', map) {
+Array.prototype.split = function(delim = '', map) {
     if (typeof(map) !== 'function') {
         map = x => x;
+    }
+    if (typeof(delim) !== 'function') {
+        delim = x => x === delim;
     }
     const groups = [];
     let group = [];
     for(let line of this) {
-        if (line == delim) {
+        if (delim(line)) {
             groups.push(group);
             group = [];
         }
@@ -358,7 +368,7 @@ Array.prototype.shuffle = function shuffleArray() {
   return this;
 }
 
-function readAndSolve(input, solver, delim = '\n') {
+function readAndSolve(input, solver, delim = '\n', then) {
     if (!input) {
         const d = ('' + new Date().getDate()).padStart(2, '0');
         input = `${d}.input`;
@@ -367,7 +377,10 @@ function readAndSolve(input, solver, delim = '\n') {
         if(error) console.error(error)
         var lines = data.replace(/\r/g, '').trim().split(delim);
         console.log(input, 'answer: '.green(), solver(lines));
+        if (typeof(then) === 'function') {
+            then();
+        }
     });
 }
 
-export { readAndSolve, Scanner, dfs, bfs }
+export { readAndSolve, Scanner, dfs, bfs, range }
