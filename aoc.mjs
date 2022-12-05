@@ -375,8 +375,8 @@ function readAndSolve(input, solver, delim = '\n', then) {
     }
     readFile(input, 'utf8', function(error, data) {
         if(error) console.error(error)
-        var lines = data.replace(/\r/g, '').trim().split(delim);
-        console.log(input, 'answer: '.green(), solver(lines));
+        var lines = data.replace(/\r/g, '').split(delim);
+        console.log(input, 'answer:\n'.green(), solver(lines));
         if (typeof(then) === 'function') {
             then();
         }
