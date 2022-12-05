@@ -33,10 +33,9 @@ function solve1(lines) {
     const remainder = lines.skipWhile(x => x[0] !== 'm');
     const instructions = remainder.map(parseInstruction);
 
-    let configuration = parseHeader(header);
-    for(let instruction of instructions) {
-        configuration = apply(configuration, instruction);
-    }
+    const configuration = instructions.reduce(
+        (config, ins) => apply(config, ins),
+        parseHeader(header));
 
     return configuration.map(x => x.last()).join('');
 };
@@ -46,10 +45,9 @@ function solve2(lines) {
     const remainder = lines.skipWhile(x => x[0] !== 'm');
     const instructions = remainder.map(parseInstruction);
 
-    let configuration = parseHeader(header).map(col => col.reverse());
-    for(let instruction of instructions) {
-        configuration = apply2(configuration, instruction);
-    }
+    const configuration = instructions.reduce(
+        (config, ins) => apply2(config, ins),
+        parseHeader(header).map(col => col.reverse()));
 
     return configuration.map(x => x[0]).join('');
 };
