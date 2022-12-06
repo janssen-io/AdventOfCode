@@ -1,13 +1,15 @@
 import { readAndSolve, range } from '../aoc.mjs'
 
-function solve(markerLength) {
-    return function([line]) {
-        return range(markerLength, line.length)
+function solveFor(markerLength) {
+    return ([line]) =>
+        range(markerLength, line.length)
             .map(markerEnd => line.slice(markerEnd - markerLength, markerEnd))
-            .map(packet => new Set(packet).size)
-            .indexOfP(length => length == markerLength) + markerLength;
-    }
+            .map(marker => new Set(marker).size)
+            .indexOfP(testLength => testLength == markerLength) + markerLength;
 }
 
-readAndSolve(process.argv[2] || '04.input', solve(4), '\n');
-readAndSolve(process.argv[2] || '04.input', solve(14), '\n');
+const solve1 = solveFor(4);
+const solve2 = solveFor(14);
+const solve = lines => { return { p1: solve1(lines), p2: solve2(lines) } }
+
+readAndSolve(process.argv[2] || '04.input', solve, '\n');

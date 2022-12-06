@@ -81,7 +81,8 @@ Array.prototype.split = function(delim = '', map) {
         map = x => x;
     }
     if (typeof(delim) !== 'function') {
-        delim = x => x === delim;
+        const delimString = delim
+        delim = x => x === delimString;
     }
     const groups = [];
     let group = [];
