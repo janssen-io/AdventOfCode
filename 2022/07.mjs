@@ -29,57 +29,67 @@ function computeSize(tree) {
     }
 }
 
-function sumIf(tree, fn, sum = 0) {
-    if (tree.children && Object.keys(tree.children).length) {
-        const _ = Object.values(tree.children).map(t => sumIf(t, fn, 0));
-        if (fn(tree)) {
-            // console.log(tree.name);
-        }
-        return _.sum() + (fn(tree) ? tree.size : 0)
-    }
-    return [];
+function walkTree(tree, select, combine, mzero) {
+    if(!tree.children || !Object.keys(tree.children).length) return mzero;
+
+    const subresult = Object
+        .values(tree.children)
+        .map(t => walkTree(t, select, combine, mzero));
+
+    return combine(subresult, select(tree));
 }
-function findDir(tree, fn, result) {
-    if (tree.children && Object.keys(tree.children).length) {
-        const _ = Object.values(tree.children).map(t => findDir(t, fn, 0));
-        if (fn(tree)) {
-            // console.log(tree.name);
-        }
-        return _.concat(fn(tree) ? tree.size : 0).flat()
-    }
-    return 0;
+
+function sumIf(tree, requirement) {
+    return walkTree(
+        tree,
+        node => requirement(node) ? node.size : 0,
+        (sub, current) => sub.sum() + current,
+        0);
+}
+
+function getDirectorySizes(tree, requirement) {
+    return walkTree(
+        tree,
+        node => requirement(node) ? node.size : [],
+        (sub, current) => sub.concat(current).flat(),
+        []);
 }
 
 function solve(lines) {
+    // prepare tree
     const path = [];
-    const dirTree = lines.skipWhile(l => l == "$ cd /").reduce((tree, line) => {
-        const parts = line.trim().split(' ');
-        if (parts[0] == "$" && parts[1] == "cd") {
-            if (parts[2] == '..')
-                path.pop();
-            else
-                path.push(parts.last());
-        }
-        else if(parts[0] == "dir") {
-            addNode(getSubtree(tree, path), parts[1], 0)
-        }
-        else if(!isNaN(parts[0])) {
-            addNode(getSubtree(tree, path), parts[1], +parts[0]);
-        }
-        else if (parts[0] == "$" && parts[1] == "ls") {}
-        else {
-            throw("Unparsed expression: " + line)
-        }
-        return tree;
-    }, { name: '/', size: 0})
+    const dirTree = lines
+        .slice(1)
+        .reduce((tree, line) => {
+            const parts = line.trim().split(' ');
+            if (parts[0] == "$") {
+                if (parts[1] == "cd") {
+                if (parts[2] == '..') path.pop();
+                    else path.push(parts.last());
+                }
+                else if (parts[1] == "ls") {} // nothing to do
+            }
+            else if(parts[0] == "dir") {
+                addNode(getSubtree(tree, path), parts[1], 0)
+            }
+            else if(!isNaN(parts[0])) {
+                addNode(getSubtree(tree, path), parts[1], +parts[0]);
+            }
+            else {
+                throw("Unparsed expression: " + line)
+            }
+            return tree;
+        }, { name: '/', size: 0});
 
     computeSize(dirTree);
+
+    // p1
     const p1 = sumIf(dirTree, node => node.size <= 100_000);
 
     // p2:
     const freeSpace = 70_000_000 - dirTree.size;
     const requiredSpace = 30_000_000 - freeSpace 
-    const p2 = Math.min(...findDir(dirTree, node => node.size >= requiredSpace).filter(x => x > 0));
+    const p2 = Math.min(...getDirectorySizes(dirTree, node => node.size >= requiredSpace));
     return { p1, p2 }
 }
 
