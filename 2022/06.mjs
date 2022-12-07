@@ -12,4 +12,4 @@ const solve1 = solveFor(4);
 const solve2 = solveFor(14);
 const solve = lines => { return { p1: solve1(lines), p2: solve2(lines) } }
 
-readAndSolve(process.argv[2] || '04.input', solve, '\n');
+readAndSolve(process.argv[2] || '06.input', solve, '\n');

@@ -10,11 +10,11 @@ Array.prototype.unique = function() {
 }
 
 Array.prototype.sum = function() {
-    return this.reduce((p,n) => +p + +n);
+    return this.reduce((p,n) => +p + +n, 0);
 }
 
 Array.prototype.product = function() {
-    return this.reduce((p,n) => +p * +n);
+    return this.reduce((p,n) => +p * +n, 1);
 }
 
 Array.prototype.without = function(other) {
@@ -24,6 +24,8 @@ Array.prototype.without = function(other) {
 Array.prototype.intersect = function(other) {
     return this.filter(c => Array.from(other).includes(c));
 }
+
+
 
 function range(start, end) {
     let result = [];
@@ -201,6 +203,8 @@ Array.prototype.setCellWrapped = function(x, y, n) {
 
     this[y * this.dimensions.x + x] = n;
 }
+
+Object.prototype.keys = function() { return Object.keys(this); }
 
 Object.prototype.setCell = function(x, y, n = true) {
     this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y };

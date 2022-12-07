@@ -38,4 +38,4 @@ function _solve(lines, part) {
 
 const solve = lines => { return { p1: _solve(lines, 1), p2: _solve(lines, 2) }}
 
-readAndSolve(process.argv[2] || '04.input', solve, '\n');
+readAndSolve(process.argv[2] || '05.input', solve, '\n');
