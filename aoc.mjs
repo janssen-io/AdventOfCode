@@ -26,7 +26,12 @@ Array.prototype.intersect = function(other) {
 }
 
 
-
+/**
+ * Generate an array of consecutive numbers.
+ * @param {number} start Inclusive lowest number
+ * @param {number} end Exclusive highest number
+ * @returns [start..end-1]
+ */
 function range(start, end) {
     let result = [];
     for(let i = start; i < end; i++) {
