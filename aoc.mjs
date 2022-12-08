@@ -260,6 +260,26 @@ Object.prototype.setCell3d = function(x, y, z, n = true) {
     this[`${x}_${y}_${z}`] = n;
 };
 
+Object.prototype.rows = function(defaultValue) {
+    const rows = [];
+    for(let y of range(0, this.dimensions.max_y + 1)) {
+        let row = [];
+        for(let x of range(0, this.dimensions.max_x + 1)) {
+            row.push(this.getCell(x, y, defaultValue));
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+Object.prototype.showGrid = function(defaultValue, c2 = 46,) {
+    return this.rows(defaultValue)
+        .map(row => row
+            .map((c, i) => c.toString().colour(i % 2 == 1 ? 30 : c2))
+            .join(''))
+        .join('\r\n');
+}
+
 class Scanner {
     constructor(message, isEof) {
         this._message = message;

@@ -63,6 +63,11 @@ function solve(lines) {
             .map(dir => isVisibleFromDir(grid, x, y, dir))
             .some(x => x))
 
+    var previewGrid = visibleTrees
+        .map2D((isVisible, x, y) => ('' + grid.getCell(x, y)).colour(isVisible ? 32 : 31))
+        .showGrid('.', 0);
+    console.log(previewGrid);
+
     const p1 = Object
         .values(visibleTrees)
         .filter(x => x === true)
@@ -74,11 +79,17 @@ function solve(lines) {
             .map(dir => getDistance(grid, x, y, dir))
             .product());
 
-    const p2 = Object
+    const p2 = Math.max(...Object
         .values(viewingDistances)
-        .filter(x => !isNaN(x));
+        .filter(x => !isNaN(x)));
+        
+    // var l = ('' + p2).length
+    // var previewGrid = viewingDistances
+    //     .map2D(distance => ('' + distance).padStart(l, '0'))
+    //     .showGrid();
+    // console.log(previewGrid);
 
-    return { p1, p2: Math.max(...p2) };
+    return { p1, p2 };
 }
 
 readAndSolve(process.argv[2] || '08.input', solve, '\n');
