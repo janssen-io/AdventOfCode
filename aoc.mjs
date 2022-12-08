@@ -1,6 +1,17 @@
 // file reading
 import {readFile} from 'fs';
 
+Array.prototype.cartesian = function(other) {
+    if (!Array.isArray(other)) throw new Error("other is not an array");
+    const product = [];
+    for(let a of this) {
+        for(let b of other) {
+            product.push([a,b]);
+        }
+    }
+    return product;
+}
+
 Array.prototype.numSort = function() {
     return this.sort((a,b) => a-b);
 }
@@ -219,6 +230,16 @@ Object.prototype.setCell = function(x, y, n = true) {
     this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
      this[`${x}_${y}`] = n;
 };
+
+Object.prototype.map2D = function(fmap) {
+    const mappedGrid = { dimensions: this.dimensions };
+    for(let x of range(0, this.dimensions.max_x + 1)) {
+        for(let y of range(0, this.dimensions.max_y + 1)) {
+            mappedGrid.setCell(x, y, fmap(this.getCell(x, y), x, y));
+        }
+    }
+    return mappedGrid;
+}
 
 Object.prototype.setCellWrapped = function(x, y, n = true) {
     if (x > this.dimensions.max_x) x = 0;
