@@ -1,196 +1,55 @@
-import { readAndSolve } from '../aoc.mjs'
+import { readAndSolve, range } from '../aoc.mjs'
 
 function move({ x, y }, [dx, dy]) {
     return { x: x + dx, y: y + dy };
 }
+
 function solve(lines) {
     let gridT = { dimensions: { max_x: 6, max_y: 6, min_x: -6, min_y: -6}};
-    let H = { x: 0, y: 0 };
-    let T = { x: 0, y: 0 };
+    let Head = { x: 0, y: 0 };
+    let p1 = [{x: 0, y: 0}]
+    let p2 = range(0, 9).map(_ => { return { x: 0, y: 0 } });
 
     gridT.setCell(0, 0, '#');
+    let snake = [Head, ...p2];
 
     for (let line of lines) {
         let [dir, num] = line.split(' ');
 
-        for (let i = 0; i < num; i++) {
-            // T is hidden
-            if (H.x == T.x && H.y == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'D':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'R':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [0, 0])
-                        break;
-                }
-            }
-            // T is left
-            else if (H.x - 1 == T.x && H.y == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'D':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'R':
-                        T = move(T, [1, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [0, 0])
-                        break;
-                }
-            }
-            // T is right
-            else if (H.x + 1 == T.x && H.y == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'D':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'R':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [-1, 0])
-                        break;
-                }
-            }
-            // T is up
-            else if (H.x == T.x && H.y + 1 == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'D':
-                        T = move(T, [0, -1])
-                        break;
-                    case 'R':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [0, 0])
-                        break;
-                }
-            }
-            // T is down
-            else if (H.x == T.x && H.y - 1 == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 1])
-                        break;
-                    case 'D':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'R':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [0, 0])
-                        break;
-                }
-            }
-            // T is left down
-            else if (H.x - 1 == T.x && H.y - 1 == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [1, 1])
-                        break;
-                    case 'D':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'R':
-                        T = move(T, [1, 1])
-                        break;
-                    case 'L':
-                        T = move(T, [0, 0])
-                        break;
-                }
-            }
-            // T is right down
-            else if (H.x + 1 == T.x && H.y - 1 == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [-1, 1])
-                        break;
-                    case 'D':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'R':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [-1, 1])
-                        break;
-                }
-            }
-            // T is left up
-            else if (H.x - 1 == T.x && H.y + 1 == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'D':
-                        T = move(T, [1, -1])
-                        break;
-                    case 'R':
-                        T = move(T, [1, -1])
-                        break;
-                    case 'L':
-                        T = move(T, [0, 0])
-                        break;
-                }
-            }
-            // T is right up
-            else if (H.x + 1 == T.x && H.y + 1 == T.y) {
-                switch (dir) {
-                    case 'U':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'D':
-                        T = move(T, [-1, -1])
-                        break;
-                    case 'R':
-                        T = move(T, [0, 0])
-                        break;
-                    case 'L':
-                        T = move(T, [-1, -1])
-                        break;
-                }
-            }
+        for (let remainingMoves = num; remainingMoves > 0; remainingMoves--) {
             switch (dir) {
                 case 'U':
-                    H = move(H, [0, 1])
+                    snake[0] = move(snake[0], [0, 1])
                     break;
                 case 'D':
-                    H = move(H, [0, -1])
+                    snake[0] = move(snake[0], [0, -1])
                     break;
                 case 'R':
-                    H = move(H, [1, 0])
+                    snake[0] = move(snake[0], [1, 0])
                     break;
                 case 'L':
-                    H = move(H, [-1, 0])
+                    snake[0] = move(snake[0], [-1, 0])
                     break;
             }
-            // gridT.setCell(H.x, -H.y, 'H')
-            gridT.setCell(T.x, -T.y, '#')
-            // console.log();
-            // console.log(gridT.showGrid('.'))
+            for(let headIndex = 0; headIndex < snake.length - 1; headIndex++) {
+                const H = snake[headIndex]
+                let T = snake[headIndex+1]
+                if (Math.abs(H.y - T.y) > 1 || Math.abs(H.x - T.x) > 1) {
+                    // T is left
+                    if (H.x > T.x) { T.x += 1 }
+                    // T is right
+                    if (H.x < T.x) { T.x -= 1 }
+                    // T is up
+                    if (H.y < T.y) { T.y -= 1 }
+                    // T is down
+                    if (H.y > T.y) { T.y += 1 }
+                    snake[headIndex + 1] = T;
+                }
+            }
+            gridT.setCell(snake.last().x, -snake.last().y, '#')
         }
     }
-
-    // console.log(gridT)
     return Object.values(gridT).filter(x => x === '#').length;
-
 }
 
 

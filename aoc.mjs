@@ -224,10 +224,10 @@ Object.prototype.keys = function() { return Object.keys(this); }
 
 Object.prototype.setCell = function(x, y, n = true) {
     this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y };
-    this.dimensions.min_x = Math.min(this.dimensions.min_x, x);
-    this.dimensions.min_y = Math.min(this.dimensions.min_y, y);
-    this.dimensions.max_x = Math.max(this.dimensions.max_x, x);
-    this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
+    this.dimensions.min_x = Math.min(this.dimensions.min_x || 0, x);
+    this.dimensions.min_y = Math.min(this.dimensions.min_y || 0, y);
+    this.dimensions.max_x = Math.max(this.dimensions.max_x || 0, x);
+    this.dimensions.max_y = Math.max(this.dimensions.max_y || 0, y);
      this[`${x}_${y}`] = n;
 };
 
@@ -251,20 +251,21 @@ Object.prototype.setCellWrapped = function(x, y, n = true) {
 
 Object.prototype.setCell3d = function(x, y, z, n = true) {
     this.dimensions = this.dimensions || { min_x: x, max_x: x, min_y: y, max_y: y, min_z: z, max_z: z };
-    this.dimensions.min_x = Math.min(this.dimensions.min_x, x);
-    this.dimensions.min_y = Math.min(this.dimensions.min_y, y);
-    this.dimensions.min_z = Math.min(this.dimensions.min_z, z);
-    this.dimensions.max_x = Math.max(this.dimensions.max_x, x);
-    this.dimensions.max_y = Math.max(this.dimensions.max_y, y);
-    this.dimensions.max_z = Math.max(this.dimensions.max_z, z);
+    this.dimensions.min_x = Math.min(this.dimensions.min_x || 0, x);
+    this.dimensions.min_y = Math.min(this.dimensions.min_y || 0, y);
+    this.dimensions.min_z = Math.min(this.dimensions.min_z || 0, z);
+    this.dimensions.max_x = Math.max(this.dimensions.max_x || 0, x);
+    this.dimensions.max_y = Math.max(this.dimensions.max_y || 0, y);
+    this.dimensions.max_z = Math.max(this.dimensions.max_z || 0, z);
     this[`${x}_${y}_${z}`] = n;
 };
 
 Object.prototype.rows = function(defaultValue) {
     const rows = [];
-    for(let y of range(0, this.dimensions.max_y + 1)) {
+    console.log(this.dimensions)
+    for(let y of range(this.dimensions.min_y, this.dimensions.max_y + 1)) {
         let row = [];
-        for(let x of range(0, this.dimensions.max_x + 1)) {
+        for(let x of range(this.dimensions.min_x, this.dimensions.max_x + 1)) {
             row.push(this.getCell(x, y, defaultValue));
         }
         rows.push(row);
@@ -275,7 +276,7 @@ Object.prototype.rows = function(defaultValue) {
 Object.prototype.showGrid = function(defaultValue, c2 = 46,) {
     return this.rows(defaultValue)
         .map(row => row
-            .map((c, i) => c.toString().colour(i % 2 == 1 ? 30 : c2))
+            // .map((c, i) => c.toString().colour(i % 2 == 1 ? 30 : c2))
             .join(''))
         .join('\r\n');
 }
