@@ -1,7 +1,8 @@
 import { readAndSolve, range } from '../aoc.mjs'
 
 class Display {
-    constructor(width, height, pixel = '█') {
+    constructor(width, height, debug, pixel = '█') {
+        this.debug = (typeof(debug) === 'function') ? debug : () => {};
         this.pixel = pixel;
         this.cycle = 0; // even though it starts at 1, we draw in position 0
         this.x = 1;
@@ -11,24 +12,29 @@ class Display {
                 max_x: width, max_y: height
             }
         };
-        this.draw();
+        this._draw();
     }
 
     noop() {
-        this.cycle += 1;
-        this.draw();
+        this._tick();
+        this._draw();
     }
 
     add(number) {
-        this.cycle += 1;
-        this.draw();
+        this._tick();
+        this._draw();
 
-        this.cycle += 1;
+        this._tick();
         this.x += number;
-        this.draw();
+        this._draw();
     }
 
-    draw() {
+    _tick() {
+        this.cycle++;
+        this.debug(this.cycle, this.x);
+    }
+
+    _draw() {
         if (Math.abs((this.cycle % 40) - this.x) <= 1) {
             this.display.setCell(this.cycle % 40, Math.floor(this.cycle / 40), this.pixel)
         }
@@ -41,7 +47,17 @@ class Display {
 
 const solve = (lines) => {
     const instructions = lines.map(line => line.split(' '));
-    const display = new Display(39, 5);
+
+    const readCycles = [20,60,100,140,180,220];
+    const readValues = [];
+
+    function debug(clock, value) {
+        if (readCycles.includes(clock)) {
+            readValues.push(value * clock);
+        }
+    }
+
+    const display = new Display(39, 5, debug);
 
     for (let instruction of instructions) {
         if (instruction[0] == 'noop') {
@@ -51,7 +67,10 @@ const solve = (lines) => {
             display.add(+instruction[1]);
         }
     }
-    return display.show();
+    
+    let result = `${'p1: '.red()}${readValues.sum()}\r\n${'p2: '.red()}\r\n`;
+    result += display.show();
+    return result;
 }
 
 readAndSolve(process.argv[2] || '10.input', solve, '\n');
