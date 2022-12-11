@@ -1,27 +1,29 @@
 import { readAndSolve } from '../aoc.mjs'
 
-function parse(monkey) {
-    const data = monkey.split('\n');
-    const opConstant = +data[2].replace(/[^\d]+/g, '');
-    const testConstant = +data[3].replace(/[^\d]+/g, '');
-    const trueMonkey = +data[4].replace(/[^\d]+/g, '');
-    const falseMonkey = +data[5].replace(/[^\d]+/g, '');
-    const id = +data[0].replace(/[^\d]+/g, '');
+function parse(monkey, worryDiv = 3, mod) {
+    const numbersOnLine = monkey.split('\n').map(l => l.numbers());
+    const id = numbersOnLine[0][0]
+    const opConstant = numbersOnLine[2][0]
+    const testConstant = numbersOnLine[3][0]
+    const trueMonkey = numbersOnLine[4][0]
+    const falseMonkey = numbersOnLine[5][0]
+    if (mod == undefined) mod = Number.MAX_VALUE;
     return {
         id,
-        items: data[1].replace(/[^\d,]+/g, '').split(',').map(x => +x),
-        operation: old => Math.floor((data[2].includes('*') ? old * (opConstant || old) : old + (opConstant || old)) / 3),
+        items: numbersOnLine[1],
+        operation: old => Math.floor((monkey.includes('*') 
+            ? old * (opConstant || old) 
+            : old + (opConstant || old)) / worryDiv) % mod,
         test: (level, monkeys) => level % testConstant == 0 
             ? monkeys[trueMonkey].items.push(level)
             : monkeys[falseMonkey].items.push(level)
-            // ? console.log(id, trueMonkey, level) || monkeys[trueMonkey].items.push(level)
-            // : console.log(id, falseMonkey, level) || monkeys[falseMonkey].items.push(level)
     }
 }
 
-const solve = (monkeys) => {
-    const n = 20;
-    const players = monkeys.map(parse)
+const solveFor = (monkeys, rounds, worryRate) => {
+    const n = rounds;
+    const maxTest = monkeys.map(m => +m.split('\n')[3].numbers()[0]).product();
+    const players = monkeys.map(m => parse(m, worryRate, maxTest));
     const counter = {};
     for(let i = 0; i < n; i++) {
         for(let player of players) {
@@ -35,9 +37,11 @@ const solve = (monkeys) => {
         }
     }
 
-    console.log(counter);
     return Object.values(counter).numSort().reverse().slice(0, 2).product();
+}
 
+const solve = (lines) => {
+    return { p1: solveFor(lines, 20, 3), p2: solveFor(lines, 10_000, 1)}
 }
 
 readAndSolve(process.argv[2] || '11.input', solve, '\n\n');

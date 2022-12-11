@@ -153,6 +153,13 @@ String.prototype.colour = function(colourCode) {
     return `\x1b[${colourCode}m${this}\x1b[0m`;
 }
 
+String.prototype.numbers = function(delim) {
+    return this.split(delim || /[ ,]/)
+        .map(words => words.replace(/[^\d]+/g, ''))
+        .filter(x => x.length > 0 && !isNaN(x))
+        .map(x => +x);
+}
+
 // This works for _most_ objects
 Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); };
 
