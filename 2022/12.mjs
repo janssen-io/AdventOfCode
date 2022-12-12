@@ -17,7 +17,7 @@ function readGrid(lines, startingPoints) {
                 grid.setCell(x, y, 'a');
             }
             if (startingPoints.includes(lines[y][x])) {
-                startingCoords.push({ x, y });
+                startingCoords.push({ x, y }); 
             }
         }
     }
@@ -26,9 +26,11 @@ function readGrid(lines, startingPoints) {
 
 function delta(grid, a, b) {
     try {
+        const char_b = grid.getCell(b.x, b.y);
+
         const h_a = grid.getCell(a.x, a.y).codePointAt();
-        let h_b = grid.getCell(b.x, b.y).codePointAt();
-        if (h_b == 'E'.codePointAt()) h_b = 'z'.codePointAt();
+        const h_b = (char_b == 'E' ? 'z' : char_b).codePointAt();
+
         return h_b - h_a;
     }
     catch (e) {
@@ -43,6 +45,7 @@ function getNeighbours(grid) {
         const right = { x: x + 1, y }
         const up = { y: y - 1, x }
         const down = { y: y + 1, x }
+
         if (x > grid.dimensions.min_x && delta(grid, { x, y }, left) <= 1) {
             yield left;
         }
@@ -61,23 +64,22 @@ function getNeighbours(grid) {
 const solveFor = (lines, startingPoints) => {
     const grid = readGrid(lines, startingPoints);
     const heightMap = grid.grid;
+
     const genStates = getNeighbours(heightMap);
     const isMatch = ({ x, y }) => heightMap.getCell(x, y) === 'E';
     const key = ({ x, y }) => `x${x},y${y}`;
-    let show = x => x;
-    show = false;
+    let show = x => x; // Adjust to show specific parts of the state
+    show = false; // Comment line to show visited states
 
-    return grid.startingCoords.map(start => {
-        const solutionIter = bfs([start], genStates, isMatch, key, show)
-        const top = solutionIter.next();
-        if (top.value.length || top.value.state) {
-            return top.value.state.depth;
-        }
-    }).filter(x => x).numSort()[0];
+    const solutionIter = bfs(grid.startingCoords, genStates, isMatch, key, show)
+    const top = solutionIter.next(); // Only interested in the first match == shortest path
+    if (top.value.state) { 
+        return top.value.state.depth;
+    }
 }
 
 const solve = (lines) => {
-    return { p1: solveFor(lines, ['S']), p2: solveFor(lines, ['S', 'a']) } //, p2: solveFor(lines) }
+    return { p1: solveFor(lines, ['S']), p2: solveFor(lines, ['S', 'a']) };
 }
 
 (async () => {
