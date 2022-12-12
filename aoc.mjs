@@ -392,10 +392,13 @@ function dfs(q, genStates, isMatch, key, show = undefined) {
  * @param {function} next Grab the next item from the queue/stack (Array.shift or Array.pop respectively for bfs/dfs) 
  * @returns 
  */
-function search(q, genStates, isMatch, key, show, next) {
+function* search(q, genStates, isMatch, key, show, next) {
     const solutions = [];
     const seen = {};
     let i = 0;
+    for(let s of q) {
+        s.depth = s.depth || 0;
+    }
     while(q.length) {
         const state = next.apply(q);
         let k = key(state);
@@ -408,9 +411,11 @@ function search(q, genStates, isMatch, key, show, next) {
         }
 
         if (isMatch(state)) {
+            // console.log('match', state);
             solutions.push(state);
+            yield { i, state };
         }
-        q = q.concat(genStates(state));
+        q = q.concat(Array.from(genStates(state)).map(s => { s.depth = (state.depth || 0) + 1; return s}));
     }
     return solutions;
 }
@@ -427,20 +432,36 @@ Array.prototype.shuffle = function shuffleArray() {
   return this;
 }
 
-function readAndSolve(input, solver, delim = '\n', then) {
-    if (!input) {
-        const d = ('' + new Date().getDate()).padStart(2, '0');
-        input = `${d}.input`;
-    }
-    readFile(input, 'utf8', function(error, data) {
-        if(error) console.error(error)
-        var lines = data.replace(/\r/g, '').split(delim);
-        console.log(input, 'answer:'.green());
-        console.log(solver(lines));
-        if (typeof(then) === 'function') {
-            then();
+function readAndSolve(input, solver, delim = '\n') {
+    return new Promise((resolve, reject) => {
+        if (!input) {
+            const d = ('' + new Date().getDate()).padStart(2, '0');
+            input = `${d}.input`;
         }
-    });
+        readFile(input, 'utf8', function(error, data) {
+            if(error) {
+                console.error(error)
+                reject(error);
+            }
+            var lines = data.replace(/\r/g, '').split(delim);
+            const answer = solver(lines);
+            resolve({file: input, answer});
+        });
+    })
 }
 
-export { readAndSolve, Scanner, dfs, bfs, range }
+function printAnswer(answer) {
+    console.log(answer.file, 'answer:'.green());
+    console.log(answer.answer);
+}
+
+function test(title, expected, actual) {
+    const result = JSON.stringify(expected) == JSON.stringify(actual);
+    console.log(result ? '🎄' : '🎅', result ? title.green() : title.red());
+    if(!result) {
+        console.log('expected', expected);
+        console.log('result', actual);
+    }
+}
+
+export { readAndSolve, printAnswer, test, Scanner, dfs, bfs, search, range }
