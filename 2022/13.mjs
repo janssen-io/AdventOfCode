@@ -1,78 +1,76 @@
 import { readAndSolve, printAnswer, test } from '../aoc.mjs'
 
-function compare(leftItem, rightItem, debug) {
-    if (debug) console.log({leftItem, rightItem})
-    if (leftItem === undefined) {
-        if (rightItem === undefined) return 0;
-        // console.log("left ran out")
+function compare(left, right, debug) {
+    if (debug) console.log({leftItem: left, rightItem: right})
+
+    if (left === undefined) {
+        // Both ran out
+        if (right === undefined) return 0;
+
+        // Left ran out
         return 1;
     }
-    else if (rightItem === undefined) {
-        // console.log("right ran out")
+
+    if (right === undefined) {
+        // Right ran out
         return -1;
     }
 
-    if (Array.isArray(leftItem) && Array.isArray(rightItem)) {
-        if (leftItem.length === 0) {
-            if (rightItem.length === 0) return 0;
-            return 1;
-        }
+    if (Array.isArray(left) && Array.isArray(right)) {
         let result = 0;
-        for(let i = 0; i <= leftItem.length && result === 0; i++) {
-            result = compare(leftItem[i], rightItem[i], debug);
+        for(let i = 0; i <= left.length && result === 0; i++) {
+            result = compare(left[i], right[i], debug);
         }
-        
         return result;
     }
-    if (Number.isInteger(leftItem) && Number.isInteger(rightItem)) {
-        if (+leftItem === +rightItem) return 0;
-        if (+leftItem < +rightItem) return 1;
-        if (+leftItem > +rightItem) return -1;
-        else throw new Error({leftItem, rightItem, cmp: leftItem > rightItem});
-    }
-    if (Array.isArray(leftItem) && Number.isInteger(rightItem)) {
-        return compare(leftItem, [rightItem], debug);
-    }
-    if (Number.isInteger(leftItem) && Array.isArray(rightItem)) {
-        return compare([leftItem], rightItem, debug);
-    }
+
+    if (Array.isArray(left)) return compare(left, [right], debug);
+    if (Array.isArray(right)) return compare([left], right, debug);
+
+    return Math.sign(right - left);
 }
 
-function packetSort(left, right) {
-    let result = 0;
-    for(let i = 0; i <= left.length && result === 0; i++) {
-        result = compare(left[i], right[i], false);
-    }
-    return result;
+const solveP1 = (lines) => {
+    return lines
+        .map((pair, index) => {
+            const [left, right] = pair.split('\n').map(eval);
+            const result = compare(left, right);
+            if(result === -1) return null;
+            return index;
+        })
+        .filter(index => index !== null)
+        .map(i => i + 1) // packets are 1-indexed
+        .sum();
 }
 
-const solveFor = (lines) => {
-    lines = lines.filter(x => x !== '');
-    lines.push('[[2]]')
-    lines.push('[[6]]');
-    const packets = lines.map(eval).sort(packetSort).reverse();
-    const a = packets.indexOfP(x => JSON.stringify(x) == '[[2]]') + 1
-    const b = packets.indexOfP(x => JSON.stringify(x) == '[[6]]') + 1
-    return a * b;
+const solveP2 = (lines, dividerPackets = []) => {
+    const packets = lines
+        .flatMap(group => group.split('\n'))
+        .map(eval)
+        .concat(dividerPackets)
+        .sort(compare)
+        .reverse();
+
+    return dividerPackets
+        .map(dividerPacket => packets.indexOfP(packet => JSON.stringify(packet) == JSON.stringify(dividerPacket)))
+        .map(index => index + 1) // packets are 1-indexed
+        .product();
 }
 
 const solve = (lines) => {
     return { 
-        p1: solveFor(lines),
-        // p2: solveFor(lines)
+        p1: solveP1(lines),
+        p2: solveP2(lines, [[[2]], [[6]]]),
     }
 }
 
 (async () => {
-    let example = await readAndSolve('13.example.input', solve, '\n');
+    let example = await readAndSolve('13.example.input', solve, '\n\n');
     test('Example p1', 13, example.answer.p1)
-    // test('Example p2', 29, example.answer.p2)
+    test('Example p2', 140, example.answer.p2)
 
     console.log();
 
-    const puzzle = await readAndSolve(process.argv[2] || '13.input', solve, '\n');
-    test('Incorrect p1 (should be red)', 5742, puzzle.answer.p1)
-    test('Incorrect p1 (should be red)', 2853, puzzle.answer.p1)
-    test('Incorrect p1 (should be red)', 3773, puzzle.answer.p1)
+    const puzzle = await readAndSolve(process.argv[2] || '13.input', solve, '\n\n');
     printAnswer(puzzle);
 })();
