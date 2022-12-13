@@ -1,12 +1,14 @@
-import { bfs, readAndSolve, printAnswer, test } from '../aoc.mjs'
+import { readAndSolve, printAnswer, test } from '../aoc.mjs'
 
 function compare(leftItem, rightItem, debug) {
     if (debug) console.log({leftItem, rightItem})
     if (leftItem === undefined) {
         if (rightItem === undefined) return 0;
+        console.log("left ran out")
         return 1;
     }
-    if (rightItem === undefined) {
+    else if (rightItem === undefined) {
+        console.log("right ran out")
         return -1;
     }
 
@@ -16,7 +18,7 @@ function compare(leftItem, rightItem, debug) {
             return 1;
         }
         let result = 0;
-        for(let i = 0; i < leftItem.length && result === 0; i++) {
+        for(let i = 0; i <= leftItem.length && result === 0; i++) {
             result = compare(leftItem[i], rightItem[i], debug);
         }
         
@@ -44,7 +46,7 @@ const solveFor = (lines) => {
         const [left, right] = left_right.map(eval);
 
         let result = 0;
-        for(let i = 0; i < left.length && result === 0; i++) {
+        for(let i = 0; i <= left.length && result === 0; i++) {
             result = compare(left[i], right[i], false);
         }
         // console.log({index, result}, '\n')
