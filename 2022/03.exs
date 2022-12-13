@@ -1,6 +1,6 @@
 Code.require_file("../aoc.exs")
 
-defmodule DayTwo do
+defmodule DayThree do
     def solve(instructions) do
         instructions
         |> Enum.map(&get_compartments/1)
@@ -50,8 +50,8 @@ defmodule DayTwo do
 
 end
 
-Aoc.readAndSolve("03.input", &DayTwo.solve/1)
+Aoc.readAndSolve("03.input", &DayThree.solve/1)
 |> IO.inspect(label: "Part 1")
 
-Aoc.readAndSolve("03.input", &DayTwo.solve2/1)
+Aoc.readAndSolve("03.input", &DayThree.solve2/1)
 |> IO.inspect(label: "Part 2")
