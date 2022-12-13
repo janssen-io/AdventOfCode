@@ -459,8 +459,8 @@ function test(title, expected, actual) {
     const result = JSON.stringify(expected) == JSON.stringify(actual);
     console.log(result ? '🎄' : '🎅', result ? title.green() : title.red());
     if(!result) {
-        console.log('expected', expected);
-        console.log('result', actual);
+        console.log('Expected:'.colour(30), expected);
+        console.log('  Result:'.colour(30), actual);
     }
 }
 
