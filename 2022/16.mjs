@@ -121,32 +121,38 @@ const solveFor = (lines) => {
     const partitionScores = {};
     const partitionPaths = {};
     console.log(` === SCORE (${new Date() - t}) ===`)
-    for (const myNames of partitions) {
+    
+    // optimal performance is probably somewhere in the middle,
+    // dividing the work between me and my 🐘-buddy.
+    const half = Math.floor(valveWithout0Names.length / 2);
+    const searchPartitions = partitions.filter(l => l.length > half - 1 && l.length < half + 1);
+    for (const myNames of searchPartitions) {
         const partSolution = scorePartition(myNames, valveNames, valves, 26);
         const partScore = partSolution.state.pressureReleased
         partitionScores[myNames.join(',')] = partScore;
         partitionPaths[myNames.join(',')] = partSolution.state.path;
         i++;
         if (i % 100 == 0) {
-            console.log({ t: new Date() - t, i: `${i}/${partitions.length}`, score: partScore, path: partSolution.state.path });
+            console.log({ t: new Date() - t, i: `${i}/${searchPartitions.length}`, score: partScore, path: partSolution.state.path });
         }
     }
     console.log(` === PAIR (${new Date() - t}) ===`)
-    i = 0;
-    for (let a of partitions) {
-        const a_parts = a.split(',').flat();
-        for (let b of partitions) {
-            const b_parts = b.split(',').flat();
+    console.log()
+    for (let i = 0; i < searchPartitions.length; i++) {
+        const a_parts = searchPartitions[i];
+        const a = a_parts.join(',')
+        for (let j = i; j < searchPartitions.length; j++) {
+            const b_parts = searchPartitions[j].split(',').flat();
+            const b = b_parts.join(',')
+            // if they share valves, it's not valid
             if (a_parts.intersect(b_parts).length > 1) {
                 continue;
             }
-            // console.log(a_parts, b_parts)
 
-            if (partitionScores[a] + partitionScores[b] >= max.p2) {
+            if (partitionScores[a] + partitionScores[b] > max.p2) {
                 max.p2 = partitionScores[a] + partitionScores[b];
-                console.log({t: new Date() - t, max: max.p2, pathA: partitionPaths[a], pathB: partitionPaths[b] });
+                console.log('new max', {t: new Date() - t, max: max.p2, pathA: partitionPaths[a], pathB: partitionPaths[b] });
             }
-            ++i;
             if (i % 1_000 == 0) {
                 console.log({t: new Date() - t, i, max: max.p2, pathA: partitionPaths[a], pathB: partitionPaths[b] });
             }
@@ -162,9 +168,9 @@ const solve = (lines) => {
 }
 
 (async () => {
-    // let example = await readAndSolve('16.example.input', solve, '\n');
-    // test('Example p1', 1651, example.answer.p1)
-    // test('Example p2', 1707, example.answer.p2)
+    let example = await readAndSolve('16.example.input', solve, '\n');
+    test('Example p1', 1651, example.answer.p1)
+    test('Example p2', 1707, example.answer.p2)
 
     // console.log();
 
@@ -193,12 +199,12 @@ function scorePartition(myNames, valveNames, valves, time = 30) {
     });
 
     // Heap with current cost heuristic seems to perform worse than regular BFS.
-    // let heap = new Heap(x => x, cmp);
-    // for (let init of myInit)
-    //     heap.push(init);
-    // const mySolution = Array.from(search(heap, generateStates, isMatch, key, show, Heap.prototype.shift));
+    let heap = new Heap(x => x, cmp);
+    for (let init of myInit)
+        heap.push(init);
+    const mySolution = Array.from(search(heap, generateStates, isMatch, key, show, Heap.prototype.shift));
 
-    const mySolution = Array.from(bfs(myInit, generateStates, isMatch, key, show));
+    // const mySolution = Array.from(bfs(myInit, generateStates, isMatch, key, show));
 
     const myScore = mySolution.numSortBy(s => s.state.pressureReleased, true)[0];
     return myScore;
@@ -222,22 +228,6 @@ function setDirections(valves) {
     for (const [name, valve] of Object.entries(valves)) {
         valve.directions = adjacencies[name];
     }
-}
-
-function findNextFunctionalValves(valves, start, distances, depth, seen = new Set()) {
-    if (seen.has(start)) return distances;
-    seen.add(start);
-
-    const valve = valves[start];
-
-    if (valve.rate > 0) {
-        const minDistance = Math.min(distances[start] || Number.MAX_VALUE, depth);
-        distances[start] = minDistance;
-    }
-
-    return valve.tunnels.reduce((acc, tunnel) => {
-        return acc.merge(findNextFunctionalValves(valves, tunnel, distances, depth + 1, seen), (a, b) => a < b);
-    }, distances)
 }
 
 function getPartitions(valveNames) {
