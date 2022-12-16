@@ -54,7 +54,7 @@ function generateStates(state) {
             valves[valve].state = OPEN;
 
             nextStates.push({
-                timeLeft: state.timeLeft - distance - 1,
+                timeLeft: state.timeLeft - timeSpent,
                 pressureReleased: pastPressure + pressureWhileWalking,
                 valves: valves,
                 currentValve: valve,
@@ -82,12 +82,15 @@ let MAX_FLOW;
 const solveFor = (lines) => {
     const valves = parseValves(lines);
     const valveNames = Object.keys(valves);
+
+    // for heap search
     MAX_FLOW = Object.values(valves).map(v => v.rate).sum();
 
     const valvesWithout0 = valves.filter((name, valve) => valve.rate > 0);
     const valveWithout0Names = Object.keys(valvesWithout0);
 
-    console.log(valveWithout0Names)
+    console.log(Object.assign(valvesWithout0, {"AA": valves["AA"]}));
+    // return;
 
     const p1Solution = scorePartition([...valveWithout0Names], valveNames, valves, 30);
     const p1Score = p1Solution.state.pressureReleased;
@@ -95,11 +98,11 @@ const solveFor = (lines) => {
     let max = { p1: p1Score, p2: 0 };
 
     const partitions = getPartitions(valveWithout0Names);
-    const partitionCount = Math.ceil(partitions.length / 2);
 
     // p2: work partitions are mirrored, so only check half of them.
     let i = 0;
     // BFS over partition + mirrored partition
+    // const partitionCount = Math.ceil(partitions.length / 2);
     // for (const myNames of partitions.slice(0, partitionCount)) {
         // const t = new Date();
         // const yourNames = valveWithout0Names.without(myNames);
@@ -111,13 +114,13 @@ const solveFor = (lines) => {
     // BFS over all partition, then search for pair that doesn't turn on same valves
     const partitionScores = {};
     const partitionPaths = {};
-    for (const myNames of partitions.reverse()) {
+    for (const myNames of partitions) {
         const t = new Date();
         const partSolution = scorePartition(myNames, valveNames, valves, 26);
         const partScore = partSolution.state.pressureReleased
         partitionScores[myNames.join(',')] = partScore;
         partitionPaths[myNames.join(',')] = partSolution.state.path;
-        console.log({ t: new Date() - t, i: `${++i}/${partitionCount}`, m: max.p2, l: myNames.length, score: partScore });
+        console.log({ t: new Date() - t, i: `${++i}/${partitions.length}`, score: partScore, path: partSolution.state.path });
     }
     for(let a of partitions) {
         const a_parts = a.split(',').flat();
@@ -134,8 +137,6 @@ const solveFor = (lines) => {
             }
         }
     }
-
-
 
     // max.p2 += 2;
     return max
@@ -161,8 +162,14 @@ const solve = (lines) => {
 function scorePartition(myNames, valveNames, valves, time = 30) {
     const isMatch = (state) => state.timeLeft == 0;
     const key = (state) => `T-${state.timeLeft} P:${state.pressureReleased} V:${state.path}`;
-    let show = (state) => state.path;
-    show = false;
+    let show = (state) => state;
+    // show = false;
+    if (myNames.length !== 3 || myNames.intersect(["JJ", "BB", "CC"]).length !== 3)
+        show = false;
+        // throw new Error(myNames);
+    else
+        console.log({myNames})
+    // console.log('!!', myNames, myNames.intersect(["JJ", "BB", "CC"]), typeof(show), show)
 
     myNames.push("AA");
     const myValves = valveNames
@@ -182,7 +189,8 @@ function scorePartition(myNames, valveNames, valves, time = 30) {
     //     heap.push(init);
     // const mySolution = Array.from(search(heap, generateStates, isMatch, key, show, Heap.prototype.shift));
 
-    const mySolution = Array.from(bfs(myInit, generateStates, isMatch, key, show));
+    const sort = undefined;
+    const mySolution = Array.from(bfs(myInit, generateStates, isMatch, key, sort, show));
 
     const myScore = mySolution.numSortBy(s => s.state.pressureReleased, true)[0];
     return myScore;

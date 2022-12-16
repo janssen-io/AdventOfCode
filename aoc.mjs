@@ -440,6 +440,7 @@ function* search(q, genStates, isMatch, key, show, next) {
 
         i++;
         if (show) {
+            console.log("====== SEARCH ======")
             console.log({i, k, state: show(state) }); //, seen });
         }
 
