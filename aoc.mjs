@@ -394,7 +394,7 @@ class Scanner {
  * @param {function} show Create a debug representation of the item
  * @returns 
  */
-function bfs(q, genStates, isMatch, key, sort, show = undefined) {
+function bfs(q, genStates, isMatch, key, show = undefined) {
     return search(q, genStates, isMatch, key, show, Array.prototype.shift)
 }
 
@@ -456,6 +456,7 @@ function* search(q, genStates, isMatch, key, show, next) {
             q.push(s_);
         }
         nextItem = next.apply(q)
+        if (q.length > 10_000) console.log(q.length);
     }
 }
 
