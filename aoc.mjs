@@ -1,5 +1,10 @@
 // file reading
+import { notDeepEqual } from 'assert';
 import {readFile} from 'fs';
+
+function* genmap (gen, f) {
+    for(let item of gen) yield f(item);
+}
 
 Array.prototype.cartesian = function(other) {
     if (!Array.isArray(other)) throw new Error("other is not an array");
@@ -12,8 +17,8 @@ Array.prototype.cartesian = function(other) {
     return product;
 }
 
-Array.prototype.numSort = function() {
-    return this.sort((a,b) => a-b);
+Array.prototype.numSort = function(reverse) {
+    return this.sort((a,b) => reverse ? b - a : a - b);
 }
 
 Array.prototype.unique = function() {
@@ -162,6 +167,27 @@ String.prototype.numbers = function(delim) {
 
 // This works for _most_ objects
 Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); };
+
+Object.prototype.filter = function(p) {
+    const result = {};
+    for(let [k, v] of Object.entries(this)) {
+        if (p(k, v)) {
+            result[k] = v;
+        }
+    }
+    return result;
+};
+
+Object.prototype.merge = function(other, p) {
+    if (typeof(p) !== 'function') {
+        p = () => true;
+    }
+    const result = Object.assign(this, other);
+    for(let k of Object.keys(this).intersect(Object.keys(other))) {
+        result[k] = p(this[k], other[k]) ? this[k] : other[k];
+    }
+    return result;
+}
 
 Object.prototype.getCell = function(x, y, defaultValue) {
     const storedValue = this[`${x}_${y}`];
@@ -365,7 +391,7 @@ class Scanner {
  * @param {function} show Create a debug representation of the item
  * @returns 
  */
-function bfs(q, genStates, isMatch, key, show = undefined) {
+function bfs(q, genStates, isMatch, key, sort, show = undefined) {
     return search(q, genStates, isMatch, key, show, Array.prototype.shift)
 }
 
@@ -396,18 +422,22 @@ function* search(q, genStates, isMatch, key, show, next) {
     const solutions = [];
     const seen = {};
     let i = 0;
-    for(let s of q) {
-        s.depth = s.depth || 0;
-    }
-    while(q.length) {
-        const state = next.apply(q);
+    // for(let s of q) {
+    //     s.depth = s.depth || 0;
+    // }
+    let nextItem = next.apply(q)
+    while(nextItem) {
+        const state = nextItem;
         let k = key(state);
-        if  (seen[k]) continue;
+        if  (seen[k]) {
+            nextItem = next.apply(q)
+            continue;
+        }
         else seen[k] = true;
 
         i++;
         if (show) {
-            console.log({i, k, state: show(state), seen });
+            console.log({i, k, state: show(state) }); //, seen });
         }
 
         if (isMatch(state)) {
@@ -415,9 +445,14 @@ function* search(q, genStates, isMatch, key, show, next) {
             solutions.push(state);
             yield { i, state };
         }
-        q = q.concat(Array.from(genStates(state)).map(s => { s.depth = (state.depth || 0) + 1; return s}));
+        // q = q.concat(Array.from(genStates(state)).map(s => { s.depth = (state.depth || 0) + 1; return s}));
+        // if (sort === undefined) continue;
+        // q = q.sort(sort);
+        for(let s_ of genStates(state)) {
+            q.push(s_);
+        }
+        nextItem = next.apply(q)
     }
-    return solutions;
 }
 
 Array.prototype.shuffle = function shuffleArray() {
@@ -464,4 +499,10 @@ function test(title, expected, actual) {
     }
 }
 
-export { readAndSolve, printAnswer, test, Scanner, dfs, bfs, search, range }
+function assert(predicate, msg) {
+    if (!predicate()) {
+        throw new Error(msg);
+    }
+}
+
+export { readAndSolve, printAnswer, test, Scanner, dfs, bfs, search, range, genmap, assert }

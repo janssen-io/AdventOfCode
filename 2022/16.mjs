@@ -1,6 +1,4 @@
-import { readAndSolve, printAnswer, test, bfs, search, genmap, dfs } from '../aoc.mjs'
-
-import { createMaxHeap, createMinHeap, Heap } from '../heap.mjs';
+import { readAndSolve, printAnswer, test, bfs, range } from '../aoc.mjs'
 
 const CLOSED = 0;
 const OPEN = 1;
@@ -30,7 +28,6 @@ const sumOpenValves = state => Object
     .map(v => v.rate)
     .sum();
 
-// const adjacentValves = state => state.valves[state.currentValve].tunnels;
 const adjacentValves = state => {
     try {
         return Object.keys(state.valves[state.currentValve].directions)
@@ -49,16 +46,14 @@ function generateStates(state) {
         // Walk to any closed valve and open it.
         const distance = state.valves[state.currentValve].directions[valve];
         const timeSpent = distance + 1; // + 1 for opening
-        if (timeSpent <= state.timeLeft && state.valves[valve].state === CLOSED) {
+        if (timeSpent <= state.timeLeft && state.valves[valve] && state.valves[valve].state === CLOSED) {
             const pastPressure = state.pressureReleased;
             const pressureWhileWalking = sumOpenValves(state) * timeSpent;
-            // console.log(openValves(state), pressureWhileWalking);
             const valves = state.valves.clone();
             valves[valve].state = OPEN;
 
             nextStates.push({
                 timeLeft: state.timeLeft - distance - 1,
-                // pressureReleased: state.pressureReleased,
                 pressureReleased: pastPressure + pressureWhileWalking,
                 valves: valves,
                 currentValve: valve,
@@ -73,7 +68,6 @@ function generateStates(state) {
         const pressureWhileWalking = sumOpenValves(state) * state.timeLeft;
         nextStates.push({
             timeLeft: 0,
-            // pressureReleased: state.pressureReleased,
             pressureReleased: pastPressure + pressureWhileWalking,
             valves: state.valves,
             currentValve: state.currentValve,
@@ -81,21 +75,103 @@ function generateStates(state) {
         });
     }
     return nextStates;
-    // // open current valve
-    // if (state.valves[state.currentValve].state === CLOSED) {
-    //     const valves = state.valves.clone();
-    //     valves[state.currentValve].state = OPEN;
-    //     yield {
-    //         timeLeft: state.timeLeft - 1,
-    //         pressureReleased: 
-    //             state.pressureReleased 
-    //             + sumOpenValves(state) + valves[state.currentValve].rate,
-    //             // valves[state.currentValve].rate * (state.timeLeft - 1),
-    //         valves,
-    //         currentValve: state.currentValve,
-    //         path: [...state.path, OPEN],
-    //     }
-    // }
+}
+
+const solveFor = (lines) => {
+    const valves = parseValves(lines);
+    const valveNames = Object.keys(valves);
+
+    const valvesWithout0 = valves.filter((name, valve) => valve.rate > 0);
+    const valveWithout0Names = Object.keys(valvesWithout0);
+
+    console.log(valveWithout0Names)
+
+    const p1_score = scorePartition([...valveWithout0Names], valveNames, valves, 30);
+
+    let max = {p1: p1_score, p2: 0};
+
+    const partitions = getPartitions(valveWithout0Names);
+    console.log(partitions.length)
+    const seen = new Set();
+    for(const myNames of partitions) {
+        const t = new Date();
+        const yourNames = valveWithout0Names.without(myNames);
+
+        // p2: work partitions are mirrored, so only check half of them.
+        let k = myNames.join(',');
+        let h = yourNames.join(',');
+        if (seen.has(k) || seen.has(h)) {
+            continue;
+        };
+        seen.add(k);
+        seen.add(h);
+
+        const myScore = scorePartition(myNames, valveNames, valves, 26);
+        const yourScore = scorePartition(yourNames, valveNames, valves, 26);
+        if (myScore + yourScore > max.p2) max.p2 = myScore + yourScore;
+        console.log({t: new Date() - t});
+    }
+    // max.p2 += 2;
+    return max
+}
+
+const solve = (lines) => {
+    return solveFor(lines);
+}
+
+(async () => {
+    let example = await readAndSolve('16.example.input', solve, '\n');
+    test('Example p1', 1651, example.answer.p1)
+    test('Example p2', 1707, example.answer.p2)
+
+    console.log();
+
+    const puzzle = await readAndSolve('16.input', solve, '\n');
+    console.log(puzzle);
+    printAnswer(puzzle.answer.p1.state.pressureReleased);
+})();
+
+function scorePartition(myNames, valveNames, valves, time = 30) {
+    const isMatch = (state) => state.timeLeft == 0;
+    const key = (state) => `T-${state.timeLeft} P:${state.pressureReleased} V:${state.path}`;
+    let show = (state) => state.path;
+    // show = false;
+
+    myNames.push("AA");
+    const myValves = valveNames
+        .filter(v => myNames.includes(v))
+        .reduce((acc, n) => { acc[n] = valves[n]; return acc; }, {});
+
+    const myInit = generateStates({
+        timeLeft: time,
+        pressureReleased: 0,
+        valves: myValves,
+        currentValve: 'AA',
+        path: ['AA']
+    });
+
+    const mySolution = Array.from(bfs(myInit, generateStates, isMatch, key, show));
+    const myScore = Math.max(...mySolution.map(s => s.state.pressureReleased));
+    return myScore;
+}
+
+function parseValves(lines) {
+    const valves = lines.map(parse).reduce((acc, valve) => {
+        acc[valve.name] = valve;
+        return acc;
+    }, {});
+    setDirections(valves);
+    return valves;
+}
+
+function setDirections(valves) {
+    for (let [name, valve] of Object.entries(valves)) {
+        valves[name].directions = {};
+        valves[name].directions = valves[name].tunnels.reduce((acc, tun) => {
+            valves[name].directions = acc.merge(findNextFunctionalValves(valves, tun, valves[name].directions, 1, new Set([name])), (a, b) => a < b);
+            return valves[name].directions;
+        }, {});
+    }
 }
 
 function findNextFunctionalValves(valves, start, distances, depth, seen = new Set()) {
@@ -104,7 +180,6 @@ function findNextFunctionalValves(valves, start, distances, depth, seen = new Se
 
     if (valves[start].rate > 0) {
         const minDistance = Math.min(distances[start] || Number.MAX_VALUE, depth);
-        // console.log('distance to', start, 'is', minDistance, distances)
         distances[start] = minDistance;
     }
 
@@ -112,138 +187,18 @@ function findNextFunctionalValves(valves, start, distances, depth, seen = new Se
         return acc.merge(findNextFunctionalValves(valves, tunnel, distances, depth + 1, seen), (a, b) => a < b);
     }, {})
 }
-const solveFor = (lines) => {
-    const valves = lines.map(parse).reduce((acc, valve) => {
-        acc[valve.name] = valve;
-        return acc;
-    }, {});
 
-    for (let [name, valve] of Object.entries(valves)) {
-        // console.log('Checking tunnels for', name);
-        valves[name].directions = {};
-        valves[name].directions = valves[name].tunnels.reduce((acc, tun) => {
-            valves[name].directions = acc.merge(findNextFunctionalValves(valves, tun, valves[name].directions, 1, new Set([name])), (a, b) => a < b);
-            return valves[name].directions;
-        }, {})
-    }
-    // return valves;
-    const valvesWithout0 = valves.filter((name, valve) => valve.rate > 0);
-    // return valvesWithout0;
-    // console.log(valves)
-    // const initialStates = Object.entries(valves['AA'].directions).map(([tun, distance]) => {
-    //     return {
-    //         timeLeft: 30 - distance,
-    //         pressureReleased: 0,
-    //         valves: valvesWithout0,
-    //         currentValve: tun,
-    //         path: ['AA', tun]
-    //     }
-    // });
-    // console.log(valvesWithout0)
-    const initialStates = generateStates({
-        timeLeft: 30,
-        pressureReleased: 0,
-        valves: valves,
-        currentValve: 'AA',
-        path: ['AA']
-    })
+function getPartitions(valveNames) {
+    return range(0, valveNames.length + 1)
+        .map(length => calculatePartitions(valveNames, length))
+        .flat();
 
-    const isMatch = (state) => {
-        return state.timeLeft == 0
-    }
-
-    const key = (state) => {
-        return `T-${state.timeLeft} P:${state.pressureReleased} V:${state.path}`;
-    }
-
-    let show = (state) => state.path;
-    // show = false;
-
-    const minRate = Math.min(...Object.values(valves).map(v => v.rate).filter(r => r > 0));
-    const maxRate = Math.max(...Object.values(valves).map(v => v.rate));
-    const maxFlow = Object.values(valves).map(v => v.rate).sum();
-    const medianRate = (() => {
-        const rates = Object.values(valves).map(v => v.rate); //.filter(r => r > 0);
-        if (rates.length % 2 == 0) {
-            return (rates[rates.length / 2] + [rates.length / 2 - 1]) / 2
-        }
-        return (rates[Math.floor(rates.length / 2)]);
-    })();
-    const averageRate = (() => {
-        const rates = Object.values(valves).map(v => v.rate); //.filter(r => r > 0);
-        return rates.sum() / rates.length;
-    })();
-
-    const cmp = (a, b) => {
-        if (a == null) return false
-        if (b == null) return false;
-        function cost(s) {
-            const current = s.pressureReleased + (s.timeLeft - 1) * sumOpenValves(s);
-            // return (30 * maxFlow - current)
-            // return (s.timeLeft * maxFlow - (s.timeLeft * sumOpenValves(s)))
-            // return maxFlow - sumOpenValves(s);
-            const target = s.timeLeft * maxFlow;
-            return target - s.timeLeft * sumOpenValves(s);
-            if (s.path.last() === OPEN) {
-                let c = s.pressureReleased + s.timeLeft * sumOpenValves(s);
-                return c;
-            }
-            else {
-                let c = s.pressureReleased + sumOpenValves(s) + (s.timeLeft - 1) * (sumOpenValves(s) + s.valves[s.currentValve].rate)
-                return c;
-            }
-        }
-        // if (a.timeLeft == b.timeLeft) return b.pressureReleased > a.pressureReleased;
-        // return (b.pressureReleased + b.timeLeft * sumOpenValves(b)) > (a.pressureReleased + a.timeLeft * sumOpenValves(a))
-        return cost(a) > cost(b);
-    };
-
-    const heap = new Heap(state => state || null, cmp);
-    for (let init of initialStates) {
-        heap.push(init);
-    }
-
-    // let r = search(heap, generateStates, isMatch, key, show, Heap.prototype.shift)
-    let r = bfs(initialStates, generateStates, isMatch, key, show);
-    let x = [];
-    let max = -1;
-    let rr = Array.from(r);
-    // console.log(rr.length);
-    return rr.map(s => s.state.pressureReleased).numSort().reverse().slice(0,50);
-    // for (let rr of rr) {
-    //     // console.log(rr.state.pressureReleased);
-    //     if (rr.state.pressureReleased > max) {
-    //         max = rr.state.pressureReleased;
-    //         x = rr.state;
-    //     }
-    // }
-    // return max;
-    return { max, x }
-    // console.log(r.next().value.state);
-    // for(let i = 0; i < 10; i ++) {
-    //     x.push(r.next().value.state.pressureReleased)
-    // }
-    return x;
-}
-
-const solveFor2 = (lines) => {
-}
-
-const solve = (lines) => {
-    return {
-        p1: solveFor(lines),
-        // p2: solveFor2(lines, max),
+    function calculatePartitions(valves, length) {
+        if (length == 0) { return [[]]; }
+        if (valves.length == 0) { return [] }
+        const [head, ...tail] = valves;
+        const ph = calculatePartitions(tail, length - 1).map(p => [head, ...p])
+        const pt = calculatePartitions(tail, length);
+        return ph.concat(pt);
     }
 }
-
-(async () => {
-    let example = await readAndSolve('16.example.input', solve, '\n');
-    test('Example p1', 1651, example.answer.p1)
-    test('Example p2', 5, example.answer.p2)
-
-    console.log();
-
-    const puzzle = await readAndSolve('16.input', solve, '\n');
-    console.log(puzzle);
-    // printAnswer(puzzle.answer.p1.state.pressureReleased);
-})();
