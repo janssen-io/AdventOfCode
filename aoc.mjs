@@ -155,7 +155,7 @@ String.prototype.colour = function(colourCode) {
 
 String.prototype.numbers = function(delim) {
     return this.split(delim || /[ ,]/)
-        .map(words => words.replace(/[^\d]+/g, ''))
+        .map(words => words.replace(/[^\d-]+/g, ''))
         .filter(x => x.length > 0 && !isNaN(x))
         .map(x => +x);
 }
