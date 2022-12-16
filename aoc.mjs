@@ -20,6 +20,9 @@ Array.prototype.cartesian = function(other) {
 Array.prototype.numSort = function(reverse) {
     return this.sort((a,b) => reverse ? b - a : a - b);
 }
+Array.prototype.numSortBy = function(s, reverse) {
+    return this.sort((a,b) => reverse ? s(b) - s(a) : s(a) - s(b));
+}
 
 Array.prototype.unique = function() {
     return this.filter((value, index, self) => self.indexOf(value) === index)

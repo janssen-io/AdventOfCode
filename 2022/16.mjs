@@ -1,4 +1,5 @@
-import { readAndSolve, printAnswer, test, bfs, range } from '../aoc.mjs'
+import { readAndSolve, printAnswer, test, bfs, range, search } from '../aoc.mjs'
+import { Heap } from '../heap.mjs';
 
 const CLOSED = 0;
 const OPEN = 1;
@@ -77,40 +78,65 @@ function generateStates(state) {
     return nextStates;
 }
 
+let MAX_FLOW;
 const solveFor = (lines) => {
     const valves = parseValves(lines);
     const valveNames = Object.keys(valves);
+    MAX_FLOW = Object.values(valves).map(v => v.rate).sum();
 
     const valvesWithout0 = valves.filter((name, valve) => valve.rate > 0);
     const valveWithout0Names = Object.keys(valvesWithout0);
 
     console.log(valveWithout0Names)
 
-    const p1_score = scorePartition([...valveWithout0Names], valveNames, valves, 30);
+    const p1Solution = scorePartition([...valveWithout0Names], valveNames, valves, 30);
+    const p1Score = p1Solution.state.pressureReleased;
 
-    let max = {p1: p1_score, p2: 0};
+    let max = { p1: p1Score, p2: 0 };
 
     const partitions = getPartitions(valveWithout0Names);
-    console.log(partitions.length)
-    const seen = new Set();
-    for(const myNames of partitions) {
+    const partitionCount = Math.ceil(partitions.length / 2);
+
+    // p2: work partitions are mirrored, so only check half of them.
+    let i = 0;
+    // BFS over partition + mirrored partition
+    // for (const myNames of partitions.slice(0, partitionCount)) {
+        // const t = new Date();
+        // const yourNames = valveWithout0Names.without(myNames);
+        // const myScore = scorePartition(myNames, valveNames, valves, 26);
+        // const yourScore = scorePartition(yourNames, valveNames, valves, 26);
+        // if (myScore + yourScore > max.p2) max.p2 = myScore + yourScore;
+        // console.log({ t: new Date() - t, i: `${++i}/${partitionCount}`, m: max.p2 });
+
+    // BFS over all partition, then search for pair that doesn't turn on same valves
+    const partitionScores = {};
+    const partitionPaths = {};
+    for (const myNames of partitions.reverse()) {
         const t = new Date();
-        const yourNames = valveWithout0Names.without(myNames);
-
-        // p2: work partitions are mirrored, so only check half of them.
-        let k = myNames.join(',');
-        let h = yourNames.join(',');
-        if (seen.has(k) || seen.has(h)) {
-            continue;
-        };
-        seen.add(k);
-        seen.add(h);
-
-        const myScore = scorePartition(myNames, valveNames, valves, 26);
-        const yourScore = scorePartition(yourNames, valveNames, valves, 26);
-        if (myScore + yourScore > max.p2) max.p2 = myScore + yourScore;
-        console.log({t: new Date() - t});
+        const partSolution = scorePartition(myNames, valveNames, valves, 26);
+        const partScore = partSolution.state.pressureReleased
+        partitionScores[myNames.join(',')] = partScore;
+        partitionPaths[myNames.join(',')] = partSolution.state.path;
+        console.log({ t: new Date() - t, i: `${++i}/${partitionCount}`, m: max.p2, l: myNames.length, score: partScore });
     }
+    for(let a of partitions) {
+        const a_parts = a.split(',').flat();
+        for (let b of partitions) {
+            const b_parts = b.split(',').flat();
+            if (a_parts.intersect(b_parts).length > 1) {
+                continue;
+            }
+            // console.log(a_parts, b_parts)
+            
+            if (partitionScores[a] + partitionScores[b] >= max.p2) {
+                max.p2 = partitionScores[a] + partitionScores[b]; 
+                console.log('m:', max.p2, partitionPaths[a], partitionPaths[b])
+            }
+        }
+    }
+
+
+
     // max.p2 += 2;
     return max
 }
@@ -126,16 +152,17 @@ const solve = (lines) => {
 
     console.log();
 
-    const puzzle = await readAndSolve('16.input', solve, '\n');
-    console.log(puzzle);
-    printAnswer(puzzle.answer.p1.state.pressureReleased);
+    // Too low: 1622
+    // const puzzle = await readAndSolve('16.input', solve, '\n');
+    // console.log(puzzle);
+    // printAnswer(puzzle.answer.p1.state.pressureReleased);
 })();
 
 function scorePartition(myNames, valveNames, valves, time = 30) {
     const isMatch = (state) => state.timeLeft == 0;
     const key = (state) => `T-${state.timeLeft} P:${state.pressureReleased} V:${state.path}`;
     let show = (state) => state.path;
-    // show = false;
+    show = false;
 
     myNames.push("AA");
     const myValves = valveNames
@@ -150,8 +177,14 @@ function scorePartition(myNames, valveNames, valves, time = 30) {
         path: ['AA']
     });
 
+    // let heap = new Heap(x => x, cmp);
+    // for (let init of myInit)
+    //     heap.push(init);
+    // const mySolution = Array.from(search(heap, generateStates, isMatch, key, show, Heap.prototype.shift));
+
     const mySolution = Array.from(bfs(myInit, generateStates, isMatch, key, show));
-    const myScore = Math.max(...mySolution.map(s => s.state.pressureReleased));
+
+    const myScore = mySolution.numSortBy(s => s.state.pressureReleased, true)[0];
     return myScore;
 }
 
@@ -193,6 +226,7 @@ function getPartitions(valveNames) {
         .map(length => calculatePartitions(valveNames, length))
         .flat();
 
+
     function calculatePartitions(valves, length) {
         if (length == 0) { return [[]]; }
         if (valves.length == 0) { return [] }
@@ -202,3 +236,13 @@ function getPartitions(valveNames) {
         return ph.concat(pt);
     }
 }
+
+const cmp = (a, b) => {
+    if (a == null) return false
+    if (b == null) return false;
+    function cost(s) {
+        const target = s.timeLeft * MAX_FLOW;
+        return target - s.timeLeft * sumOpenValves(s);
+    }
+    return cost(a) > cost(b);
+};
