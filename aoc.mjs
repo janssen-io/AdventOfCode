@@ -98,8 +98,10 @@ Array.prototype.chunk = function(n) {
     return result;
 }
 
-Array.prototype.last = function() { 
-    return this[this.length - 1]
+Array.prototype.last = function(n = 0) { 
+    if (n < 0) throw new Error("n must be 0 or greater")
+    if (n >= this.length) throw new Error("n must be smaller than the length: " + this.length)
+    return this[this.length - 1 - n]
 };
 
 Array.prototype.split = function(delim = '', map) {
@@ -141,6 +143,10 @@ String.prototype.without = function(other) {
 
 String.prototype.intersect = function(other) {
     return this.split('').intersect(other);
+}
+
+String.prototype.filter = function(pred) {
+    return this.split('').filter(pred).join('');
 }
 
 String.prototype.repeat = function(n) {
@@ -309,11 +315,12 @@ Object.prototype.rows = function(defaultValue) {
     return rows;
 }
 
-Object.prototype.showGrid = function(defaultValue, c2 = 46,) {
-    return this.rows(defaultValue)
-        .map(row => row
-            // .map((c, i) => c.toString().colour(i % 2 == 1 ? 30 : c2))
-            .join(''))
+Object.prototype.showGrid = function(defaultValue, reverse) {
+    let rows = this.rows(defaultValue)
+    if (reverse) rows = rows.reverse();
+
+    return rows
+        .map(row => row.join(''))
         .join('\r\n');
 }
 
