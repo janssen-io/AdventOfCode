@@ -1,9 +1,12 @@
 // file reading
-import { notDeepEqual } from 'assert';
 import {readFile} from 'fs';
 
 function* genmap (gen, f) {
     for(let item of gen) yield f(item);
+}
+
+Array.prototype.withIndex = function(offset = 0) {
+    return this.map((item, i) => [item, i + offset]);
 }
 
 Array.prototype.cartesian = function(other) {
@@ -36,14 +39,23 @@ Array.prototype.product = function() {
     return this.reduce((p,n) => +p * +n, 1);
 }
 
-Array.prototype.without = function(other) {
-    return this.filter(c => !Array.from(other).includes(c));
+Array.prototype.without = function(other, eql) {
+    if (typeof(eql) !== 'function') {
+        return this.filter(item => !Array.from(other).includes(item));
+    }
+    else {
+        return this.filter(item => !Array.from(other).some(mine => eql(item, mine)));
+    }
 }
 
-Array.prototype.intersect = function(other) {
-    return this.filter(c => Array.from(other).includes(c));
+Array.prototype.intersect = function(other, eql) {
+    if (typeof(eql) !== 'function') {
+        return this.filter(item => Array.from(other).includes(item));
+    }
+    else {
+        return this.filter(item => Array.from(other).some(mine => eql(item, mine)));
+    }
 }
-
 
 /**
  * Generate an array of consecutive numbers.
@@ -463,7 +475,7 @@ function* search(q, genStates, isMatch, key, show, next) {
             q.push(s_);
         }
         nextItem = next.apply(q)
-        if (q.length > 10_000) console.log(q.length);
+        // if (q.length > 10_000) console.log(q.length);
     }
 }
 
