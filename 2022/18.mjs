@@ -1,4 +1,5 @@
-import { readAndSolve, printAnswer, test, range, assert, bfs, dfs } from '../aoc.mjs'
+import { readAndSolve, printAnswer, test, search, range, assert, bfs, dfs } from '../aoc.mjs'
+import { Heap } from '../heap.mjs'
 
 const AXES = ['x', 'y', 'z'];
 function setUnexposedSides(a, b) {
@@ -7,10 +8,9 @@ function setUnexposedSides(a, b) {
     if (diff.filter(x => x == 0).length == 2 && axisIndex !== -1) {
         const axis = AXES[axisIndex];
         
-        a.unexposedSides[axis].push(diff[axisIndex]);
-        b.unexposedSides[axis].push(diff[axisIndex] * -1);
+        a.unexposedSides[axis].push(diff[axisIndex] * -1); // a - b > 0, but left is side -1
+        b.unexposedSides[axis].push(diff[axisIndex]);
     }
-    return diff.filter(x => x).length == 2 && diff.filter(x => x).length == 1;
 }
 
 const eql = ([a, b, c], [x, y, z]) => a == x && b == y && c == z;
@@ -63,31 +63,39 @@ function getExposedSides(cube) {
         else if (cube.unexposedSides[axis].length == 1) {
             const side = cube.map(x => x);
 
-            // why not * -1? Don't we push the unexposed side now?
-            side[i] += cube.unexposedSides[axis][0]; 
+            // * -1, because the other side is exposed
+            side[i] += cube.unexposedSides[axis][0] * -1; 
             sides.push(side);
         }
         else if (cube.unexposedSides[axis].length == 2) {
-            // both unexposed
+            // both unexposed, nothing to do
         }
         else {
             throw new Error("😭")
         }
     }
-    // console.log({exposed: sides})
     return sides;
 }
 
 const numberOfUnexposedSides = (cube) => Object.values(cube.unexposedSides).map(side => side.length).sum();
 
+function updateBounds(cubes, i, bounds) {
+    if (cubes[i][0] < bounds.min_x) { bounds.min_x = cubes[i][0]; }
+    if (cubes[i][1] < bounds.min_y) { bounds.min_y = cubes[i][1]; }
+    if (cubes[i][2] < bounds.min_z) { bounds.min_z = cubes[i][2]; }
+    if (cubes[i][0] > bounds.max_x) { bounds.max_x = cubes[i][0]; }
+    if (cubes[i][1] > bounds.max_y) { bounds.max_y = cubes[i][1]; }
+    if (cubes[i][2] > bounds.max_z) { bounds.max_z = cubes[i][2]; }
+}
+
 const solveFor = (lines) => {
-    let cubes = lines.map(line => line.split(',').map(x => +x));
-    let cubeGrid = cubes.reduce((grid, cube) => {
+    const cubes = lines.map(line => line.split(',').map(x => +x));
+    const cubeGrid = cubes.reduce((grid, cube) => {
+        cube.unexposedSides = { x: [], y: [], z: [] }
         grid[getKey(cube)] = true;
         return grid;
-    }, {})
-    // naive, compare all cubes with ones further down the line to set unexposed sides; 
-    cubes.forEach(cube => cube.unexposedSides = { x: [], y: [], z: [] });
+    }, {});
+
     const bounds = {
         min_x: cubes[0][0],
         max_x: cubes[0][0],
@@ -96,6 +104,8 @@ const solveFor = (lines) => {
         min_z: cubes[0][2],
         max_z: cubes[0][2],
     }
+
+    // Compare all cubes with those further down the line, to see where they are at
     for (let i = 0; i < cubes.length; i++) {
         updateBounds(cubes, i, bounds);
         for (let j = i; j < cubes.length; j++) {
@@ -110,10 +120,8 @@ const solveFor = (lines) => {
     /* === p2 === */
     let p2 = p1;
     const pockets = {};
-    const pocketCount = {};
     for (let side of cubes.flatMap(getExposedSides)) {
         if (pockets[getKey(side)]) {
-            pocketCount[getKey(side)]++;
             p2--;
             continue;
         }
@@ -123,12 +131,8 @@ const solveFor = (lines) => {
         if (isReachable(side, bounds, cubeGrid)) continue;
 
         pockets[getKey(side)] = true;
-        pocketCount[getKey(side)] = 1;
-        console.log('pocket', side)
         p2--;
     }
-    console.log('max pocket count:', Math.max(...Object.values(pocketCount)))
-    console.log('min pocket count:', Math.min(...Object.values(pocketCount)))
     return { p1, p2 };
 }
 
@@ -141,16 +145,6 @@ const solve = (lines) => {
     test('Example p1', 64, example.answer.p1)
     test('Example p2', 58, example.answer.p2)
 
-    // 3018 too high
     const puzzle = await readAndSolve('18.input', solve, '\n');
     printAnswer(puzzle);
 })();
-function updateBounds(cubes, i, bounds) {
-    if (cubes[i][0] < bounds.min_x) { bounds.min_x = cubes[i][0]; }
-    if (cubes[i][1] < bounds.min_y) { bounds.min_y = cubes[i][1]; }
-    if (cubes[i][2] < bounds.min_z) { bounds.min_z = cubes[i][2]; }
-    if (cubes[i][0] > bounds.max_x) { bounds.max_x = cubes[i][0]; }
-    if (cubes[i][1] > bounds.max_y) { bounds.max_y = cubes[i][1]; }
-    if (cubes[i][2] > bounds.max_z) { bounds.max_z = cubes[i][2]; }
-}
-
