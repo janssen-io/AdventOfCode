@@ -2,16 +2,15 @@ import { readAndSolve, printAnswer, test, range, assert, bfs, dfs } from '../aoc
 
 const AXES = ['x', 'y', 'z'];
 function setUnexposedSides(a, b) {
-    const theSame = a.map((c, i) => c == b[i]);
-    const oneDiff = a.map((c, i) => c - b[i]);
-    const axisIndex = oneDiff.indexOfP(x => x == 1 || x == -1);
-    if (theSame.filter(x => x).length == 2 && axisIndex !== -1) {
+    const diff = a.map((c, i) => c - b[i]);
+    const axisIndex = diff.indexOfP(x => x == 1 || x == -1);
+    if (diff.filter(x => x == 0).length == 2 && axisIndex !== -1) {
         const axis = AXES[axisIndex];
         
-        a.unexposedSides[axis].push(oneDiff[axisIndex]);
-        b.unexposedSides[axis].push(oneDiff[axisIndex] * -1);
+        a.unexposedSides[axis].push(diff[axisIndex]);
+        b.unexposedSides[axis].push(diff[axisIndex] * -1);
     }
-    return theSame.filter(x => x).length == 2 && oneDiff.filter(x => x).length == 1;
+    return diff.filter(x => x).length == 2 && diff.filter(x => x).length == 1;
 }
 
 const eql = ([a, b, c], [x, y, z]) => a == x && b == y && c == z;
@@ -58,6 +57,17 @@ function getExposedSides(cube) {
             side[i] -= 2;
             sides.push(side);
         }
+        else if (cube.unexposedSides[axis].length == 1) {
+            const side = cube.map(x => x);
+            side[i] += cube.unexposedSides[axis][0];
+            sides.push(side);
+        }
+        else if (cube.unexposedSides[axis].length == 2) {
+            // both unexposed
+        }
+        else {
+            throw new Error("Huilen")
+        }
     }
     // console.log({exposed: sides})
     return sides;
@@ -95,8 +105,10 @@ const solveFor = (lines) => {
     /* === p2 === */
     let p2 = p1;
     const pockets = {};
+    const pocketCount = {};
     for (let side of cubes.flatMap(getExposedSides)) {
         if (pockets[getKey(side)]) {
+            pocketCount[getKey(side)]++;
             p2--;
             continue;
         }
@@ -106,9 +118,12 @@ const solveFor = (lines) => {
         if (isReachable(side, bounds, cubeGrid)) continue;
 
         pockets[getKey(side)] = true;
+        pocketCount[getKey(side)] = 1;
         console.log('pocket', side)
         p2--;
     }
+    console.log('max pocket count:', Math.max(...Object.values(pocketCount)))
+    console.log('min pocket count:', Math.min(...Object.values(pocketCount)))
     return { p1, p2 };
 }
 
@@ -117,7 +132,7 @@ const solve = (lines) => {
 }
 
 (async () => {
-    let example = await readAndSolve('18.bart.input', solve, '\n');
+    let example = await readAndSolve('18.example.input', solve, '\n');
     test('Example p1', 64, example.answer.p1)
     test('Example p2', 58, example.answer.p2)
 
