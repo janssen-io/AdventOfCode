@@ -54,19 +54,24 @@ function getExposedSides(cube) {
             const side = cube.map(x => x);
             side[i] += 1;
             sides.push(side);
-            side[i] -= 2;
-            sides.push(side);
+
+            // make a clone, so we don't update the reference inside `sides`.
+            const side2 = cube.map(x => x);
+            side2[i] -= 1;
+            sides.push(side2);
         }
         else if (cube.unexposedSides[axis].length == 1) {
             const side = cube.map(x => x);
-            side[i] += cube.unexposedSides[axis][0];
+
+            // why not * -1? Don't we push the unexposed side now?
+            side[i] += cube.unexposedSides[axis][0]; 
             sides.push(side);
         }
         else if (cube.unexposedSides[axis].length == 2) {
             // both unexposed
         }
         else {
-            throw new Error("Huilen")
+            throw new Error("😭")
         }
     }
     // console.log({exposed: sides})
