@@ -182,16 +182,3 @@ function dropNextRock(nextRock, maxY, room, directions, nextDir) {
     }
     return { maxY, nextDir };
 }
-
-function* primes(max) {
-    yield 1;
-    yield 2;
-    const primes = [2];
-    for (let candidate = 3; candidate < max; candidate++) {
-        const isDivisible = primes.some(prime => candidate % prime == 0);
-        if (!isDivisible) {
-            primes.push(candidate);
-            yield candidate
-        }
-    }
-}

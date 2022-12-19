@@ -529,4 +529,37 @@ function assert(predicate, msg) {
     }
 }
 
-export { readAndSolve, printAnswer, test, Scanner, dfs, bfs, search, range, genmap, assert }
+function* primes(max) {
+    yield 1;
+    yield 2;
+    const primes = [2];
+    for (let candidate = 3; candidate < max; candidate++) {
+        const isDivisible = primes.some(prime => candidate % prime == 0);
+        if (!isDivisible) {
+            primes.push(candidate);
+            yield candidate
+        }
+    }
+}
+
+function manhattan(p, q) {
+    const x = Math.abs(p.x - q.x);
+    const y = Math.abs(p.y - q.y);
+    const z = Math.abs(p.z - q.z) || 0;
+    return x + y + z;
+}
+
+export {
+    readAndSolve,
+    printAnswer,
+    test,
+    Scanner,
+    dfs,
+    bfs,
+    search,
+    range,
+    genmap,
+    assert,
+    primes,
+    manhattan,
+}
