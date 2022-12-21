@@ -23,7 +23,7 @@ Array.prototype.cartesian = function(other) {
 Array.prototype.numSort = function(reverse) {
     return this.sort((a,b) => reverse ? b - a : a - b);
 }
-Array.prototype.numSortBy = function(s, reverse) {
+Array.prototype.numSortBy = function(reverse, s) {
     return this.sort((a,b) => reverse ? s(b) - s(a) : s(a) - s(b));
 }
 
@@ -440,7 +440,7 @@ function dfs(q, genStates, isMatch, key, show = undefined) {
  * @param {function} next Grab the next item from the queue/stack (Array.shift or Array.pop respectively for bfs/dfs) 
  * @returns 
  */
-function* search(q, genStates, isMatch, key, show, next) {
+function* search(q, genStates, isMatch, key, show, next, maxLength) {
     const solutions = [];
     const seen = {};
     let i = 0;
@@ -458,6 +458,9 @@ function* search(q, genStates, isMatch, key, show, next) {
         else seen[k] = true;
 
         i++;
+        if (i % 100_000 == 0) {
+            console.log("search: ", i, q.length, nextItem)
+        }
         if (show) {
             console.log("====== SEARCH ======")
             console.log({i, k, state: show(state) }); //, seen });
@@ -467,6 +470,10 @@ function* search(q, genStates, isMatch, key, show, next) {
             // console.log('match', state);
             solutions.push(state);
             yield { i, state };
+            // console.log('Found:', state)
+            nextItem = next.apply(q)
+            continue;
+            
         }
         // q = q.concat(Array.from(genStates(state)).map(s => { s.depth = (state.depth || 0) + 1; return s}));
         // if (sort === undefined) continue;

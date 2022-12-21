@@ -16,10 +16,17 @@ function Heap(selector, cmp) {
 }
 
 
-Heap.prototype.push = function(val) {
+Heap.prototype.push = function(val, maxLength) {
   this.data.push(val);
-  this.length++; this.size++;
   this.bubbleUp(this.data.length-1);
+  
+  // if (maxLength > 0 && this.data.length > maxLength) {
+  //   this.data.pop();
+  // }
+  if(maxLength)
+    this.data.length = Math.min(this.data.length, maxLength);
+  this.length = this.data.length;
+  this.size = this.data.length;
 };
 
 Heap.prototype.bubbleUp = function(index) {
