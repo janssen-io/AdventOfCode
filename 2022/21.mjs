@@ -98,20 +98,42 @@ const solveFor2 = (lines) => {
         lastRoot = operations.root;
     }
 
+    // We checked our input, X only appears once in the equation (on the left side);
     let [left, right] = operations.root.split('=')
-    try { left = eval(left); } catch { }
-    try { right = eval(right); } catch { }
-    return { message: "Exercise for the reader: solve for x so that left == right", left, right }; 
+    right = eval(right);
+
+    // Initial solution: use some online equation solver
+    // return { message: "Exercise for the reader: solve for x so that left == right", left, right }; 
+
+    // Better solution: binary search.
+    // Because X only appears once, we know the equation is only increasing or decreasing
+    // By checking the output of each time we search, we can figure out which way it goes.
+    // (Or by checking it before hand with a few values for X)
+    let lowest = -1 * 1e32;
+    let highest = 1e32;
+    let X = 0;
+    while(highest !== lowest) {
+        const result = eval(left);
+        if (result < right) {
+            const newX = Math.ceil((lowest + X) / 2);
+            highest = X;
+            X = newX;
+        }
+        else if (result > right) {
+            const newX = Math.ceil((X + highest) / 2);
+            lowest = X;
+            X = newX;
+        }
+        // console.log(result, right, X, lowest, highest)
+        if (result == right) {
+            return X;
+        }
+    }
 }
 
 const solve = (lines) => {
     let p1;
-    try {
-        solveFor(lines)
-    }
-    catch(e) {
-        p1 = +e.message
-    }
+    try { solveFor(lines) } catch(e) { p1 = +e.message }
     return {
         p1,
         p2: solveFor2(lines),
