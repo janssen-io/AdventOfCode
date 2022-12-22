@@ -109,7 +109,7 @@ const getFaceEdgeFactory = (faceX, faceY) =>
                 }
             case 'right':
                 return {
-                    x: faceX[faceId][0],
+                    x: faceX[faceId][1] - 1,
                     y: faceY[faceId][0] + cornerDistance,
                     r: { x: -1, y: 0 },
                 }
