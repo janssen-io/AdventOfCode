@@ -98,6 +98,175 @@ function warpLinear(grid, pos) {
     return { canWarp, warpedPos };
 }
 
+function warpCubicExample(grid, pos) {
+    const faceSize = (maxY + 1) / 3;
+    /* determine what face we are on
+            1
+        2-3-4
+            5-6
+    */
+    // Y
+    // 1: y < faceSize;
+    // 2,3,4: faceSize <= y < faceSize * 2
+    // 5,6: faceSize * 2 <= y
+
+    // X
+    // 1,4,5: faceSize * 2 <= x < faceSize * 3
+    // 2: x < faceSize
+    // 3: faceSize <= x < faceSize * 2
+    // 6: faceSize * 3 <= x
+
+    const faceX = {
+        1: [faceSize * 2, faceSize * 3],
+        2: [faceSize * 0, faceSize * 1],
+        3: [faceSize * 1, faceSize * 2],
+        4: [faceSize * 2, faceSize * 3],
+        5: [faceSize * 2, faceSize * 3],
+        6: [faceSize * 3, faceSize * 4]
+    }
+
+    const faceY = {
+        1: [faceSize * 0, faceSize * 1],
+        2: [faceSize * 1, faceSize * 2],
+        3: [faceSize * 1, faceSize * 2],
+        4: [faceSize * 1, faceSize * 2],
+        5: [faceSize * 2, faceSize * 3],
+        6: [faceSize * 2, faceSize * 3],
+    }
+
+    let face = 0;
+    for(let i = 1; i <= 6; i++) {
+        if (faceX[i][0] <= pos.x && pos.x < faceX[i][1]
+            && faceY[i][0] <= pos.y && pos.y < faceY[i][1]) {
+            face = i;
+            break;
+        }
+    }
+    console.log({faceSize, pos, faceX, faceY});
+    assert(() => face != 0, "No Face");
+
+    // cubic warps:
+    // 1R -> 6(right) + rotate 2R
+    // 4R -> 6(top) + rotate R
+    // 6R -> 1(left) + rotate 2R
+
+    // 1L -> 3(top) + rotate L
+    // 2L -> 6(bottom) + rotate R
+    // 5L -> 3(bottom) + rotate R
+
+    // 1U -> 2(top) + rotate 2R
+    // 2U -> 1(top) + rotate 2R
+    // 3U -> 1(left) + rotate R
+    // 6U -> 4(right) + rotate L
+
+    // 2D -> 5(bottom) + rotate 2R
+    // 3D -> 5(left) + rotate L
+    // 5D -> 1(left) + rotate R
+    // 6D -> 2(left) + rotate L
+
+    // cornerDistance = current pos % faceSize;
+    const getFaceEdge = (faceId, edge, cornerDistance) => {
+        switch(edge) {
+            case 'top':
+                return {
+                    x: faceX[faceId][0] + (faceSize - cornerDistance - 1),
+                    y: faceY[faceId][0],
+                    r: { x: 0, y: 1 },
+                }
+            case 'right':
+                return {
+                    x: faceX[faceId][0],
+                    y: faceY[faceId][0] + (faceSize - cornerDistance - 1),
+                    r: { x: -1, y: 0 },
+                }
+            case 'bottom':
+                return {
+                    x: faceX[faceId][0] + (faceSize - cornerDistance - 1),
+                    y: faceY[faceId][1] - 1,
+                    r: { x: 0, y: -1 },
+                }
+            case 'left':
+                return {
+                    x: faceX[faceId][0],
+                    y: faceY[faceId][0] + (faceSize - cornerDistance - 1),
+                    r: { x: 1, y: 0 },
+                }
+            default:
+                throw 'Unexpected edge: ' + edge;
+        }
+    }
+
+    let warpedPos;
+    switch(face) {
+        case 1:
+            if (eql(E, pos.r)) {
+                warpedPos = getFaceEdge(6, 'right', pos.y % faceSize)
+            }
+            else if (eql(W, pos.r)) {
+                warpedPos = getFaceEdge(3, 'top', pos.y % faceSize)
+            }
+            else if (eql(N, pos.r)) {
+                warpedPos = getFaceEdge(2, 'top', pos.x % faceSize)
+            }
+            break
+        case 2:
+            if (eql(W, pos.r)) {
+                warpedPos = getFaceEdge(6, 'bottom', pos.y % faceSize)
+            }
+            else if (eql(N, pos.r)) {
+                warpedPos = getFaceEdge(1, 'top', pos.x % faceSize)
+            }
+            else if (eql(S, pos.r)) {
+                warpedPos = getFaceEdge(5, 'bottom', pos.x % faceSize)
+            }
+            break
+        case 3:
+            if (eql(N, pos.r)) {
+                warpedPos = getFaceEdge(1, 'left', (faceSize - (pos.x % faceSize)) - 1)
+            }
+            else if (eql(S, pos.r)) {
+                warpedPos = getFaceEdge(5, 'left', pos.x % faceSize)
+            }
+            break
+        case 4:
+            if (eql(E, pos.r)) {
+                warpedPos = getFaceEdge(6, 'top', pos.y % faceSize)
+            }
+            break
+        case 5:
+            if (eql(W, pos.r)) {
+                warpedPos = getFaceEdge(3, 'bottom', pos.y % faceSize)
+            }
+            else if (eql(S, pos.r)) {
+                warpedPos = getFaceEdge(2, 'bottom', pos.x % faceSize)
+            }
+            break
+        case 6:
+            if (eql(E, pos.r)) {
+                warpedPos = getFaceEdge(1, 'left', pos.y % faceSize)
+            }
+            else if (eql(N, pos.r)) {
+                warpedPos = getFaceEdge(4, 'top', pos.x % faceSize)
+            }
+            else if (eql(S, pos.r)) {
+                warpedPos = getFaceEdge(2, 'left', pos.x % faceSize)
+            }
+            break
+    }
+    console.log({warpedPos, face, r: pos.r})
+
+    let warpedTile = get(grid, warpedPos.x, warpedPos.y, WARP)
+    assert(() => warpedTile !== WARP, "Warped into the void");
+
+    // If the other side is wall, don't move there
+    const canWarp = warpedTile !== WALL;
+    return { canWarp, warpedPos };
+}
+
+function warpCubic(grid, pos) {
+    // TODO
+}
+
 function walk(grid, pos, instructions, warpFrom) {
     const debugGrid = {...grid};
     set(debugGrid, pos.x, pos.y, toArrow(pos.r).green());
@@ -118,6 +287,7 @@ function walk(grid, pos, instructions, warpFrom) {
             // show(grid)
             pos.x = nextPos.x;
             pos.y = nextPos.y;
+            pos.r = nextPos.r || pos.r;
             set(debugGrid, pos.x, pos.y, toArrow(pos.r));
             assert(
                 () => get(grid, pos.x, pos.y, WARP) !== WARP,
@@ -127,6 +297,7 @@ function walk(grid, pos, instructions, warpFrom) {
         // then we rotate
         if (instructions.rotations[i]) {
             pos.r = rotate(instructions.rotations[i], pos.r);
+            set(debugGrid, pos.x, pos.y, toArrow(pos.r));
         }
         else {
             console.log('end of input', i);
@@ -169,22 +340,22 @@ function solveFor(lines, warpFrom) {
 }
 
 
-const solve = (lines) => {
+const solve = (cubicWarper) => (lines) => {
     return {
         p1: solveFor(lines, warpLinear),
-        p2: solveFor(lines, warpCubic),
+        p2: solveFor(lines, cubicWarper),
     }
 }
 
 (async () => {
-    let example = await readAndSolve('22.example.input', solve, '\n\n');
+    let example = await readAndSolve('22.example.input', solve(warpCubicExample), '\n\n');
     test('Example p1', 6032, example.answer.p1)
     test('Example p2', 5031, example.answer.p2)
     assert(() => example.answer.p1 == 6032, "Example p1 failed")
-    assert(() => example.answer.p1 == 5031, "Example p2 failed")
+    assert(() => example.answer.p2 == 5031, "Example p2 failed")
 
     // too high: 156098
     // too high: 173006
-    const puzzle = await readAndSolve('22.input', solve, '\n\n');
+    const puzzle = await readAndSolve('22.input', solve(warpCubic), '\n\n');
     printAnswer(puzzle);
 })();
