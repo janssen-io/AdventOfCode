@@ -72,7 +72,33 @@ const toArrow = (direction) => {
     if (eql(direction, W)) return '<';
 }
 
-function walk(grid, pos, instructions) {
+function warpLinear(grid, pos) {
+    let warpedPos = add(pos, pos.r);
+
+    // warping from right to left side
+    if (pos.r.x > 0) { warpedPos.x = 0; }
+    // warping from left to right side
+    else if (pos.r.x < 0) { warpedPos.x = maxX; }
+
+    // warping from bottom to top side
+    if (pos.r.y > 0) { warpedPos.y = 0; }
+    // warping from top to bottom side
+    else if (pos.r.y < 0) { warpedPos.y = maxY; }
+
+    let warpedTile = get(grid, warpedPos.x, warpedPos.y, WARP)
+
+    // Find a tile on the other side
+    while (warpedTile === WARP) {
+        warpedPos = add(warpedPos, pos.r);
+        warpedTile = get(grid, warpedPos.x, warpedPos.y, WARP)
+    }
+
+    // If the other side is wall, don't move there
+    const canWarp = warpedTile !== WALL;
+    return { canWarp, warpedPos };
+}
+
+function walk(grid, pos, instructions, warpFrom) {
     const debugGrid = {...grid};
     set(debugGrid, pos.x, pos.y, toArrow(pos.r).green());
     for (const [distance, i] of instructions.distances.withIndex()) {
@@ -85,28 +111,9 @@ function walk(grid, pos, instructions) {
                 break;
             }
             else if (nextTile === WARP) {
-                // warping from right to left side
-                if (pos.r.x > 0) { nextPos.x = 0; }
-                // warping from left to right side
-                else if (pos.r.x < 0) { nextPos.x = maxX; }
-
-                // warping from bottom to top side
-                if (pos.r.y > 0) { nextPos.y = 0; }
-                // warping from top to bottom side
-                else if (pos.r.y < 0) { nextPos.y = maxY; }
-
-                let warpedTile = get(grid, nextPos.x, nextPos.y, WARP)
-
-                // Find a tile on the other side
-                while (warpedTile === WARP) {
-                    nextPos = add(nextPos, pos.r);
-                    warpedTile = get(grid, nextPos.x, nextPos.y, WARP)
-                }
-
-                // If the other side is wall, don't move there
-                if (warpedTile == WALL) {
-                    break;
-                }
+                const { canWarp, warpedPos} = warpFrom(grid, pos);
+                if (!canWarp) break;
+                nextPos = warpedPos;
             }
             // show(grid)
             pos.x = nextPos.x;
@@ -140,7 +147,7 @@ function password(pos) {
     return 1000 * (pos.y + 1) + 4 * (pos.x + 1) + facing;
 }
 
-function solveFor(lines) {
+function solveFor(lines, warpFrom) {
     const grid = parse(lines[0].split('\n'));
     const instructions = {
         distances: lines[1].split(/[RL]/).map(x => +x),
@@ -157,23 +164,24 @@ function solveFor(lines) {
         pos.x++;
     }
     console.log({maxX, maxY})
-    pos = walk(grid, pos, instructions);
+    pos = walk(grid, pos, instructions, warpFrom);
     return password(pos);
 }
 
 
 const solve = (lines) => {
     return {
-        p1: solveFor(lines),
-        // p2: solveFor(lines),
+        p1: solveFor(lines, warpLinear),
+        p2: solveFor(lines, warpCubic),
     }
 }
 
 (async () => {
     let example = await readAndSolve('22.example.input', solve, '\n\n');
     test('Example p1', 6032, example.answer.p1)
-    test('Example p2', undefined, example.answer.p2)
+    test('Example p2', 5031, example.answer.p2)
     assert(() => example.answer.p1 == 6032, "Example p1 failed")
+    assert(() => example.answer.p1 == 5031, "Example p2 failed")
 
     // too high: 156098
     // too high: 173006
