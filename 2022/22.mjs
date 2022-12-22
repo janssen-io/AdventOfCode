@@ -93,7 +93,7 @@ function walk(grid, pos, instructions) {
                 // warping from bottom to top side
                 if (pos.r.y > 0) { nextPos.y = 0; }
                 // warping from top to bottom side
-                else if (pos.r.y < 0) { nextPos.y = maxX; }
+                else if (pos.r.y < 0) { nextPos.y = maxY; }
 
                 let warpedTile = get(grid, nextPos.x, nextPos.y, WARP)
 
