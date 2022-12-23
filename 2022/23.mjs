@@ -1,8 +1,6 @@
 import { readAndSolve, printAnswer, test, assert } from '../aoc.mjs'
 
-const eql = (left, right) => { return left.x == right.x && left.y == right.y; };
 const add = (left, right) => { return { x: left.x + right.x, y: left.y + right.y } };
-const sub = (left, right) => { return { x: left.x - right.x, y: left.y - right.y } };
 const E = { x: 1, y: 0 };
 const S = { x: 0, y: 1 };
 const W = { x: -1, y: 0 };
@@ -49,7 +47,8 @@ function parse(lines) {
     const grid = {};
     for (let y = 0; y < lines.length; y++) {
         for (let x = 0; x < lines[y].length; x++) {
-            set(grid, x, y, lines[y][x]);
+            if (lines[y][x] == '#')
+                set(grid, x, y, lines[y][x]);
         }
     }
     return grid;
@@ -83,8 +82,6 @@ const hasNeighbour = (grid, point, directions) => {
 function propose(grid, startIndex) {
     const proposalGrid = {};
     // loop over all elves;
-    // for (const [coord, _] of Object.entries(grid).filter(([_, val]) => val === '#')) {
-    // const [x, y] = coord.split('_').map(x => +x);
     for (let x = minX; x <= maxX; x++) {
         elfloop:
         for (let y = minY; y <= maxY; y++) {
@@ -129,11 +126,13 @@ function walk(proposal) {
         for (let y = minY; y <= maxY; y++) {
             const elves = get(proposal, x, y, []);
             if (elves.length == 1) {
-                // console.log('single elf', elves[0], x, y);
+                // Single elf wants to move to {x, y}
+                // They can go there. :)
                 set(grid, x, y, '#');
             }
             else {
-                // console.log('multiple elves', elves, x, y);
+                // Multiples elves want to move to {x, y}
+                // Set them back to their original location.
                 for (const elf of elves) {
                     setP(grid, elf, '#')
                 }
@@ -152,56 +151,66 @@ function gridEqual(a, b) {
     return true;
 }
 
-function solveFor(lines, maxIterations) {
-    let grid = parse(lines);
-    const originalElves = Object.values(grid).filter(v => v === '#').length;
-    const originalSize = (maxX - minX + 1) * (maxY - minY + 1);
-
-    for (let i = 0; i < maxIterations; i++) {
-        if (i % 200 == 100) console.log(i)
-        const proposal = propose(grid, i);
-        const newGrid = walk(proposal);
-
-        if (gridEqual(newGrid, grid)) return i + 1;
-        grid = newGrid;
-    }
-
-    const elves = Object.values(grid).filter(v => v === '#').length;
-
-    let elfMinX = 0;
-    let elfMaxX = 0;
-    let elfMinY = 0;
-    let elfMaxY = 0;
-    for (let x = minX - 1; x <= maxX + 1; x++) {
-        for (let y = minY - 1; y <= maxY + 1; y++) {
-            if (get(grid, x, y, '.') === '#') {
-                if (x < elfMinX)elfMinX = x;
-                if (x > elfMaxX)elfMaxX = x;
-                if (y < elfMinY)elfMinY = y;
-                if (y > elfMaxY)elfMaxY = y;
+function emptySpots(grid, elfCount) {
+    let elfMinX, elfMaxX, elfMinY, elfMaxY;
+    elfMinX = elfMaxX = elfMinY = elfMaxY = 0;
+    for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+            if (get(grid, x, y, '.') == '#') {
+                if (x < elfMinX) elfMinX = x;
+                if (x > elfMaxX) elfMaxX = x;
+                if (y < elfMinY) elfMinY = y;
+                if (y > elfMaxY) elfMaxY = y;
             }
         }
     }
+    return (elfMaxX - elfMinX + 1) * (elfMaxY - elfMinY + 1) - elfCount;
+}
 
-    const size = (elfMaxX - elfMinX + 1) * (elfMaxY - elfMinY + 1);
-    assert(() => elves == originalElves, "Oh no, the elves procreated")
-    assert(() => size > originalSize, "The elves didn't move")
-    // return { size, elves, c: size - elves }
-    return size - elves;
+function solveFor(lines, maxIterations) {
+    let grid = parse(lines);
+    const elfCount = Object.values(grid).length;
+
+    let elvesStoppedMoving = false;
+    let p1, p2;
+    for (let i = 0; ; i++) {
+        if (i % 200 == 100) console.log(i)
+        // p1
+        if (i == maxIterations) {
+            p1 = emptySpots(grid, elfCount);
+        }
+
+        const proposal = propose(grid, i);
+        const newGrid = walk(proposal);
+
+        // p2
+        if (gridEqual(newGrid, grid)) {
+            grid = newGrid;
+            p2 = i + 1;
+            elvesStoppedMoving = true;
+            break;
+        }
+
+        grid = newGrid;
+    }
+
+    const elves = Object.values(grid).length;
+
+    assert(() => elves == elfCount, "Oh no, the elves procreated")
+    return { p1: p1 || emptySpots(grid, elfCount), p2 };
 }
 
 
 const solve = (lines) => {
-    return {
-        p1: solveFor(lines, 10),
-        p2: solveFor(lines, 1e6),
-    }
+    // Ensure dimensions are reset between solves!
+    minX = minY = maxX = maxY = 0;
+    return solveFor(lines, 10)
 }
 
 (async () => {
-    // let example = await readAndSolve('23.example.input', solve, '\n');
-    // test('Example p1', undefined, example.answer.p1)
-    // test('Example p2', undefined, example.answer.p2)
+    let example = await readAndSolve('23.example.input', solve, '\n');
+    test('Example p1', 25, example.answer.p1)
+    test('Example p2', 4, example.answer.p2)
 
     const puzzle = await readAndSolve('23.input', solve, '\n');
     printAnswer(puzzle);
