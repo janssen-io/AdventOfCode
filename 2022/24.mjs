@@ -1,4 +1,4 @@
-import { readAndSolve, printAnswer, test, manhattan } from '../aoc.mjs'
+import { readAndSolve, printAnswer, test, manhattan, assert } from '../aoc.mjs'
 import { Heap } from '../heap.mjs'
 
 const WALL = '#';
@@ -17,7 +17,6 @@ const directions = {
     'v': { x: 0, y: 1 },
     '^': { x: 0, y: -1 },
 }
-const BLIZZARD = Object.keys(directions);
 
 const setP = (grid, { x, y }, value) => set(grid, x, y, value);
 function set(grid, x, y, value) {
@@ -61,7 +60,14 @@ function parse(lines) {
     return grid;
 }
 
-function show(grid, me) {
+function show(grid, me, prev) {
+    if (me && prev) {
+        console.log({me, d: manhattan(me, prev)})
+        assert(() => manhattan(me, prev) <= 1, "Distance too big: " + JSON.stringify({me, prev}));
+    }
+
+    if (me)
+        assert(() => getP(grid, me, []).length== 0, "Ran into something: " + JSON.stringify(getP(grid, me, [])));
     for (let y = minY; y <= maxY; y++) {
         let row = ''
         for (let x = minX; x <= maxX; x++) {
@@ -84,13 +90,20 @@ function show(grid, me) {
                 else {
                     row += value;
                 }
+                if (prev && prev.x == x && prev.y == y) {
+                    row = row.substring(0, row.length - 1) + row[row.length - 1].red();
+                }
             }
         }
         console.log(row);
     }
 }
 
-function nextStates(state) {
+function wallCount(grid) {
+    return Object.values(grid).filter(cell => Array.isArray(cell) && cell[0] == '#').length;
+}
+
+function nextStates(state, start, end) {
     let newGrid = {}
     if (gridByTime[state.time]) {
         newGrid = gridByTime[state.time];
@@ -101,22 +114,22 @@ function nextStates(state) {
             for (let y = minY; y <= maxY; y++) {
                 // Ensure grid is properly filled. Not strictly necessary,
                 // but makes reasoning and troubleshooting down the line easier.
-                const currentValue = getP(newGrid, {x, y}, []);
-                setP(newGrid, {x, y}, currentValue);
+                const currentValue = getP(newGrid, { x, y }, []);
+                setP(newGrid, { x, y }, currentValue);
 
                 const currents = get(grid, x, y, []);
                 if (currents.length == 0) {
                     continue; // tile was empty on the current grid, nothing to do.
                 }
-                for (const current of currents) {
+                for (const currentTile of currents) {
                     // Walls don't move, but we need to make sure we copy them to the new grid.
-                    if (current == WALL) {
+                    if (currentTile == WALL) {
                         setP(newGrid, { x, y }, [WALL])
                         continue;
                     }
 
-                    // Any other 'current' can only be a blizzard
-                    const direction = directions[current];
+                    // Any other non-empty tile can only be a blizzard
+                    const direction = directions[currentTile];
                     if (!direction) throw "Non-empty array, but not a blizzard? " + currents;
 
                     // Check where we are moving and if that tile is a wall.
@@ -125,50 +138,81 @@ function nextStates(state) {
 
                     // The input contains no vertical blizzards on start.x and end.x
                     // Any move is therefore a spot inside the wall or a wall.
+
+                    // Sanity check that blizzards really don't try to move to start and end.
+                    const eql = (a, b) => a.x == b.x && a.y == b.y;
+                    if (eql(targetPos, start) || eql(targetPos, end)) {
+                        throw new Error("Blizzard trying to get into start/end");
+                    }
+
                     if (targetTile[0] === WALL) {
                         // warping left, move past the wall on the same y
                         if (direction.x < 0) targetPos = { x: maxX - 1, y: targetPos.y };
+
                         // warping right, move past the wall on the same y
                         if (direction.x > 0) targetPos = { x: 1, y: targetPos.y };
+
                         // warping up, move past the wall on the same x 
                         if (direction.y < 0) { targetPos = { x: targetPos.x, y: maxY - 1 }; }
+
                         // warping down, move past the wall on the same x
                         if (direction.y > 0) { targetPos = { x: targetPos.x, y: 1 }; }
                     }
 
                     // Get the tile from the new grid. If it doesn't exist yet, it's free (empty)
                     const newTile = getP(newGrid, targetPos, []);
-                    newTile.push(current);
+                    assert(() => newTile.length == 1 || !newTile.includes('#'), "Trying to push something onto a wall")
+                    newTile.push(currentTile);
                     setP(newGrid, targetPos, newTile);
 
                 }
             }
         }
+        // Ensure the walls stay intact.
+        const wc1 = wallCount(newGrid);
+        const wc2 = wallCount(grid);
+        assert(() => wc1 == wc2, "Wall count difference: " + wc1 + " vs " + wc2);
+        // console.log(wc1, wc2)
         gridByTime[state.time] = newGrid;
         // show(newGrid);
         // console.log(gridByTime);
+        console.log(state.time);
     }
 
     const states = [];
     for (let cardinalDir of Object.values(directions)) {
-        // Spot is open
-        const pos = add(state.E, cardinalDir);
-        if (pos.x < minX || pos.x > maxX || pos.y < minY || pos.y > maxY) continue;
-        const spot = getP(newGrid, pos, [])
-        // console.log(spot, pos, maxX, maxY)
-        // console.log(newGrid)
-        if (spot.length == 0) {
+        const newPos = add(state.E, cardinalDir);
+
+        if (newPos.x < minX || newPos.x > maxX || newPos.y < minY || newPos.y > maxY) continue;
+        const newTile = getP(newGrid, newPos, [])
+
+        // Empty tile = no blizzards or walls
+        if (newTile.length == 0) {
+            try {
+                assert(
+                    () => (newPos.x > 0 && newPos.x < maxX) || (newPos.x == start.x || newPos.x == end.x),
+                    `Ran into a wall at: ${newPos.x},${newPos.y}`
+                )
+                assert(
+                    () => (newPos.y > 0 && newPos.y < maxX) || (newPos.y == start.y || newPos.y == end.y),
+                    `Ran into a wall at: ${newPos.x},${newPos.y}`
+                )
+            }
+            catch (e) {
+                // console.log(newGrid);
+                throw e;
+            }
             states.push({
                 time: state.time + 1,
-                E: pos,
-                p: state.p.concat(pos)
+                E: newPos,
+                p: state.p.concat(newPos)
             });
         }
     }
 
     // If we are surrounded by blizzards in the next minute
     // Then we must wait. 
-    if (states.length === 0) {
+    // if (states.length === 0) {
         // We can only wait if our waiting spot is NOT occupied by a blizzard now.
         if (getP(newGrid, state.E, []).length === 0) {
             states.push({
@@ -177,13 +221,14 @@ function nextStates(state) {
                 p: state.p.concat({ ...state.E })
             });
         }
-        // else: swallowed by blizzard 🥶
-    }
+        // else: swallowed by blizzard 🥶 
+        // no further states to explore.
+    // }
 
     return states;
 }
 
-const gridByTime = {};
+let gridByTime = {};
 
 function simulate(start, end) {
     const init = {
@@ -191,7 +236,7 @@ function simulate(start, end) {
         E: start,
         p: [start]
     }
-    const k = state => `[${state.time % (maxX * maxY)}] (${state.E.x},${state.E.y})`;
+    const k = state => `[${state.time}] (${state.E.x},${state.E.y})`;
     const seen = new Set();
 
     let q = [];
@@ -202,12 +247,11 @@ function simulate(start, end) {
         // console.log(state);
         // if (state.time > maxX * maxY) break;
         const key = k(state);
-
         if (seen.has(key)) continue;
         seen.add(key);
 
         if (state.E.x == end.x && state.E.y == end.y) {
-            console.log({ state })
+            // console.log({ p: state.p })
             return state;
         }
         const next = nextStates(state, start, end)
@@ -217,6 +261,8 @@ function simulate(start, end) {
     return 'no solutions found.'
 }
 
+const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
+
 function solveFor(lines, start, end) {
     const grid = parse(lines);
     // Sanity check to see if we got the end right.
@@ -224,16 +270,26 @@ function solveFor(lines, start, end) {
     for (const dir of Object.values(directions)) {
         console.log('neighbours', dir, getP(grid, add(end, dir)));
     }
-    gridByTime[0] = grid;
+    gridByTime = { 0: grid };
 
     allowSizeChange = false;
 
     const ans = simulate(start, end);
-    // for (let [time, g] of Object.entries(gridByTime)) {
-    //     console.log(time)
-    //     show(g, ans.p[time]);
-    // }
-    return ans;
+    animateSolution(false);
+    console.log(ans.p, ans.E)
+    return ans.time - 1;
+
+    async function animateSolution(shouldWait = false) {
+        let previousPos = ans.p[0];
+        for (let [time, g] of Object.entries(gridByTime)) {
+            console.clear();
+            console.log(time);
+            show(g, ans.p[time], previousPos);
+            previousPos = ans.p[time];
+            if (shouldWait)
+                await waitKeyPressed();
+        }
+    }
 }
 
 
@@ -246,13 +302,25 @@ const solve = (start, end) => (lines) => {
     }
 }
 
+function waitKeyPressed() {
+    return new Promise(resolve => {
+        process.stdin.resume();
+        process.stdin.once("data", (data) => {
+            process.stdin.pause();
+            resolve(data.toString());
+        });
+    });
+}
+
 
 (async () => {
     let example = await readAndSolve('24.example.input', solve({ x: 1, y: 0 }, { x: 6, y: 5 }), '\n');
     test('Example p1', 18, example.answer.p1)
     test('Example p2', undefined, example.answer.p2)
 
-    // 153: too low
     const puzzle = await readAndSolve('24.input', solve({ x: 1, y: 0 }, { x: 120, y: 26 }), '\n');
     printAnswer(puzzle);
+
+    // 153: too low
+    // 362, 276
 })();
