@@ -176,7 +176,7 @@ function nextStates(state, start, end) {
         gridByTime[state.time] = newGrid;
         // show(newGrid);
         // console.log(gridByTime);
-        console.log(state.time);
+        // console.log(state.time);
     }
 
     const states = [];
@@ -230,8 +230,8 @@ function nextStates(state, start, end) {
 
 let gridByTime = {};
 
-function simulate(start, end) {
-    const init = {
+function simulate(start, end, init) {
+    const initialState = init || {
         time: 1,
         E: start,
         p: [start]
@@ -240,7 +240,7 @@ function simulate(start, end) {
     const seen = new Set();
 
     let q = [];
-    q.push(init);
+    q.push(initialState);
     console.log(' === START === ')
     while (q.length) {
         const state = q.shift();
@@ -274,10 +274,15 @@ function solveFor(lines, start, end) {
 
     allowSizeChange = false;
 
-    const ans = simulate(start, end);
-    animateSolution(false);
+    let ans = simulate(start, end);
+    const p1 = ans.time - 1;
+    // Retrieve elf snacks
+    ans = simulate(end, start, ans);
+    ans = simulate(start, end, ans);
+    // animateSolution(true);
+    const p2 = ans.time - 1;
     console.log(ans.p, ans.E)
-    return ans.time - 1;
+    return { p1, p2 }
 
     async function animateSolution(shouldWait = false) {
         let previousPos = ans.p[0];
@@ -287,7 +292,7 @@ function solveFor(lines, start, end) {
             show(g, ans.p[time], previousPos);
             previousPos = ans.p[time];
             if (shouldWait)
-                await waitKeyPressed();
+                await sleep(500);
         }
     }
 }
@@ -296,10 +301,7 @@ function solveFor(lines, start, end) {
 const solve = (start, end) => (lines) => {
     minX = minY = maxX = maxY = 0;
     allowSizeChange = true;
-    return {
-        p1: solveFor(lines, start, end),
-        // p2: solveFor(lines),
-    }
+    return solveFor(lines, start, end);
 }
 
 function waitKeyPressed() {
