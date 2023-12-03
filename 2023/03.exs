@@ -10,7 +10,19 @@ defmodule DayThree do
   end
 
   def p1() do
-    Schematic.coordinates(:symbols)
+    get_parts(:symbols)
+    |> Enum.sum
+  end
+
+  def p2() do
+    get_parts(:gears)
+    |> Stream.filter(&(Enum.count(&1) == 2))
+    |> Stream.map(&Enum.product/1)
+    |> Enum.sum
+  end
+
+  def get_parts(map) do
+    Schematic.coordinates(map)
     |> Stream.flat_map(fn {x, y} ->
       for dx <- -1..1, dy <- -1..1 do
         Schematic.get_number(x + dx, y + dy)
@@ -18,21 +30,6 @@ defmodule DayThree do
       |> Stream.reject(&is_nil/1)
       |> Enum.uniq
     end)
-    |> Enum.sum
-  end
-
-  def p2() do
-    Schematic.coordinates(:gears)
-    |> Stream.map(fn {x, y} ->
-      for dx <- -1..1, dy <- -1..1 do
-        Schematic.get_number(x + dx, y + dy)
-      end
-      |> Stream.reject(&is_nil/1)
-      |> Enum.uniq
-    end)
-    |> Stream.filter(&(Enum.count(&1) == 2))
-    |> Stream.map(&Enum.product/1)
-    |> Enum.sum
   end
 
   def create_schematic(lines) do
