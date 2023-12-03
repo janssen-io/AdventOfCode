@@ -4,12 +4,12 @@ defmodule DayThree do
   import Aoc, only: [is_digit: 1]
 
   def solve(lines) do
-    # p1(lines) |> IO.inspect(label: 'p1')
-    p2(lines) |> IO.inspect(label: 'p2')
+    create_schematic(lines)
+    p1() |> IO.inspect(label: 'p1')
+    p2() |> IO.inspect(label: 'p2')
   end
 
-  def p1(lines) do
-    create_schematic(lines)
+  def p1() do
     Schematic.coordinates(:symbols)
     |> Stream.flat_map(fn {x, y} ->
       for dx <- -1..1, dy <- -1..1 do
@@ -21,9 +21,8 @@ defmodule DayThree do
     |> Enum.sum
   end
 
-  def p2(lines) do
-    create_schematic(lines)
-    Schematic.coordinates(:symbols)
+  def p2() do
+    Schematic.coordinates(:gears)
     |> Stream.map(fn {x, y} ->
       for dx <- -1..1, dy <- -1..1 do
         Schematic.get_number(x + dx, y + dy)
@@ -59,24 +58,25 @@ defmodule Schematic do
   def new() do 
     Agent.start_link(fn -> %{} end, name: :parts)
     Agent.start_link(fn -> %{} end, name: :symbols)
+    Agent.start_link(fn -> %{} end, name: :gears)
   end
 
-  def put(x, y, value) do
-    case value do
-      c when is_digit(c) -> _put(x, y, c)
-      "*" -> _put(x, y, :symbol) # part 2
-      "." -> nil
-      "\n" -> nil
-      _ -> nil
-    end
+  def put(_, _, value) when value in [".", "\n"] do
+    nil
   end
 
-  def _put(x, y, :symbol) do
-    Agent.update(:symbols, &Map.put(&1, {x, y}, true))
-  end
-
-  def _put(x, y, value) do
+  def put(x, y, value) when is_digit(value) do
     Agent.update(:parts, &Map.put(&1, {x, y}, value))
+  end
+
+  # p2: keep track of gears `*` separately
+  def put(x, y, "*") do
+    Agent.update(:symbols, &Map.put(&1, {x, y}, true))
+    Agent.update(:gears, &Map.put(&1, {x, y}, true))
+  end
+
+  def put(x, y, _) do
+    Agent.update(:symbols, &Map.put(&1, {x, y}, true))
   end
 
   def is_symbol(x, y) do
