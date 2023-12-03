@@ -4,7 +4,7 @@ defmodule DayThree do
   import Aoc, only: [is_digit: 1]
 
   def solve(lines) do
-    p1(lines) |> IO.inspect(label: 'p1')
+    # p1(lines) |> IO.inspect(label: 'p1')
     p2(lines) |> IO.inspect(label: 'p2')
   end
 
@@ -21,8 +21,19 @@ defmodule DayThree do
     |> Enum.sum
   end
 
-  def p2(_lines) do
-    0
+  def p2(lines) do
+    create_schematic(lines)
+    Schematic.coordinates(:symbols)
+    |> Stream.map(fn {x, y} ->
+      for dx <- -1..1, dy <- -1..1 do
+        Schematic.get_number(x + dx, y + dy)
+      end
+      |> Stream.reject(&is_nil/1)
+      |> Enum.uniq
+    end)
+    |> Stream.filter(&(Enum.count(&1) == 2))
+    |> Stream.map(&Enum.product/1)
+    |> Enum.sum
   end
 
   def create_schematic(lines) do
@@ -52,10 +63,11 @@ defmodule Schematic do
 
   def put(x, y, value) do
     case value do
+      c when is_digit(c) -> _put(x, y, c)
+      "*" -> _put(x, y, :symbol) # part 2
       "." -> nil
       "\n" -> nil
-      c when is_digit(c) -> _put(x, y, c)
-      _ -> _put(x, y, :symbol)
+      _ -> nil
     end
   end
 
