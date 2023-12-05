@@ -7,4 +7,8 @@ defmodule Aoc do
             |> solve.()
         end
     end
+
+    def get_digits(string) do
+      Regex.scan(~r/\d+/, string) |> List.flatten
+    end
 end
