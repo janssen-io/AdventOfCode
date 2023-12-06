@@ -3,15 +3,15 @@ defmodule Year20xx.Day01 do
   @doc ~S"""
   ## Examples
 
-    iex> Year20xx.Day01.part_1(["123"])
+    iex> Year20xx.Day01.p1(["123"])
     ["123"]
   """
-  def part_1(input) do
+  def p1(input) do
     input
     |> Enum.into([])
   end
 
-  def part_2(input) do
+  def p2(input) do
     input
     |> Enum.into([])
   end

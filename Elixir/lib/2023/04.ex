@@ -1,13 +1,4 @@
-Code.require_file("../aoc.exs")
-
-defmodule DayFour do
-  import Aoc, only: [is_digit: 1]
-
-  def solve(lines) do
-    p1(lines) |> IO.inspect(label: 'p1')
-    p2(lines) |> IO.inspect(label: 'p2')
-  end
-
+defmodule Year2023.Day04 do
   def p1(lines) do
     lines
     |> Stream.map(&calculate/1)
@@ -19,18 +10,15 @@ defmodule DayFour do
     lines
     |> Enum.map(&calculate/1)
     |> Enum.reduce({ 0, [] }, &win_cards/2)
+    |> then(fn { answer, _} -> answer end)
   end
 
   def calculate(line) do
     [left, right] = String.split(line, "|")
-    winning = get_digits(left) |> tl |> MapSet.new
-    hand = get_digits(right) |> MapSet.new
+    winning = Elf.get_digits(left) |> tl |> MapSet.new
+    hand = Elf.get_digits(right) |> MapSet.new
     MapSet.intersection(winning, hand)
     |> MapSet.size
-  end
-
-  def get_digits(string) do
-    Regex.scan(~r/\d+/, string) |> List.flatten
   end
 
   def points(size) do
@@ -62,10 +50,3 @@ defmodule DayFour do
   def sum_w({_, w}, acc) do acc + w end
 
 end
-
-# Aoc.readAndSolve("02.input", &DayTwo.solve/1, ["\r\n", "\n"], true)
-File.stream!("04.example.input", [], :line)
-|> DayFour.solve
-File.stream!("04.input", [], :line)
-|> DayFour.solve
-

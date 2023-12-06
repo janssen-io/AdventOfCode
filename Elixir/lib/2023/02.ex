@@ -1,11 +1,4 @@
-Code.require_file("../aoc.exs")
-
-defmodule DayTwo do
-  def solve(lines) do
-    p1(lines)
-    p2(lines)
-  end
-
+defmodule Year2023.Day02 do
   def p1(lines) do
     lines
     # remove impossible games
@@ -17,7 +10,6 @@ defmodule DayTwo do
     |> Stream.map(&hd/1)
     |> Stream.map(&String.to_integer/1)
     |> Enum.sum
-    |> IO.inspect(label: "p1")
   end
 
   def p2(lines) do
@@ -27,7 +19,6 @@ defmodule DayTwo do
     # calculate power by multiplying them
     |> Stream.map(fn l -> Enum.reduce(l, &*/2) end)
     |> Enum.sum
-    |> IO.inspect(label: "p2")
   end
 
   def get_max(game, colour) do
@@ -37,6 +28,3 @@ defmodule DayTwo do
     |> Enum.max
   end
 end
-
-Aoc.readAndSolve("02.input", &DayTwo.solve/1, ["\r\n", "\n"], true)
-

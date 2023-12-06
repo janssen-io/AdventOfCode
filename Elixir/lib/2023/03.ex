@@ -1,20 +1,16 @@
-Code.require_file("../aoc.exs")
+import Elf, only: [is_digit: 1]
 
-defmodule DayThree do
-  import Aoc, only: [is_digit: 1]
-
-  def solve(lines) do
+defmodule Year2023.Day03 do
+  alias(Year2023.Day03.Schematic, as: Schematic)
+  def p1(lines) do
     create_schematic(lines)
-    p1() |> IO.inspect(label: 'p1')
-    p2() |> IO.inspect(label: 'p2')
-  end
-
-  def p1() do
     get_parts(:symbols)
+    |> Stream.flat_map(&(&1))
     |> Enum.sum
   end
 
-  def p2() do
+  def p2(lines) do
+    create_schematic(lines)
     get_parts(:gears)
     |> Stream.filter(&(Enum.count(&1) == 2))
     |> Stream.map(&Enum.product/1)
@@ -23,7 +19,7 @@ defmodule DayThree do
 
   def get_parts(map) do
     Schematic.coordinates(map)
-    |> Stream.flat_map(fn {x, y} ->
+    |> Stream.map(fn {x, y} ->
       for dx <- -1..1, dy <- -1..1 do
         Schematic.get_number(x + dx, y + dy)
       end
@@ -50,9 +46,8 @@ defmodule DayThree do
 
 end
 
-defmodule Schematic do
-  import Aoc, only: [is_digit: 1]
-  def new() do 
+defmodule Year2023.Day03.Schematic do
+  def new() do
     Agent.start_link(fn -> %{} end, name: :parts)
     Agent.start_link(fn -> %{} end, name: :symbols)
     Agent.start_link(fn -> %{} end, name: :gears)
@@ -109,8 +104,3 @@ defmodule Schematic do
     Agent.get(map, &Map.keys(&1))
   end
 end
-
-# Aoc.readAndSolve("02.input", &DayTwo.solve/1, ["\r\n", "\n"], true)
-File.stream!("03.input", [], :line)
-|> DayThree.solve
-

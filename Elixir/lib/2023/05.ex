@@ -1,14 +1,4 @@
-Code.require_file("../aoc.exs")
-
-defmodule DayFive do
-  import Aoc, only: [get_digits: 1, is_digit: 1]
-
-  def solve(lines) do
-    p1(lines) |> IO.inspect(label: ~c"p1", charlists: :as_lists)
-    p2(lines) |> IO.inspect(label: ~c"p2", charlists: :as_lists)
-    test() |> IO.inspect(label: ~c"test", charlists: :as_lists)
-  end
-
+defmodule Year2023.Day05 do
   def p1(lines) do
     parts = Stream.chunk_by(lines, fn x -> x == "\n" end)
 
@@ -16,7 +6,7 @@ defmodule DayFive do
       Enum.take(parts, 1)
       |> hd
       |> hd
-      |> get_digits
+      |> Elf.get_digits
       |> Enum.map(&String.to_integer/1)
       |> Enum.map(fn n -> [n, n] end)
 
@@ -26,7 +16,7 @@ defmodule DayFive do
       |> Stream.reject(fn lines -> lines == ["\n"] end)
       |> Enum.map(&parse_map/1)
 
-    act(seeds, maps)
+    act(seeds, maps) |> hd |> Elf.snd
   end
 
   def p2(lines) do
@@ -36,7 +26,7 @@ defmodule DayFive do
       Enum.take(parts, 1)
       |> hd
       |> hd
-      |> get_digits
+      |> Elf.get_digits
       |> Enum.map(&String.to_integer/1)
       |> Enum.chunk_every(2)
       |> Enum.map(fn [a, b] -> [a, a + b - 1] end)
@@ -47,7 +37,7 @@ defmodule DayFive do
       |> Stream.reject(fn lines -> lines == ["\n"] end)
       |> Enum.map(&parse_map/1)
 
-    act(seeds, maps)
+    act(seeds, maps) |> hd |> Elf.snd
   end
 
   def test do
@@ -57,20 +47,19 @@ defmodule DayFive do
   end
 
   def act(seeds, maps) do
-    seed =
-      seeds
-      |> Enum.map(fn s -> {s, walk_map2(maps, {s, []}, 0)} end)
-      |> Enum.map(fn {s, d} -> {s, Enum.min(d)} end)
-      |> Enum.sort_by(fn {_, loc} -> loc end)
+    seeds
+    |> Enum.map(fn s -> {s, walk_map2(maps, {s, []}, 0)} end)
+    |> Enum.map(fn {s, d} -> {s, Enum.min(d)} end)
+    |> Enum.sort_by(fn {_, loc} -> loc end)
   end
 
   def parse_map([_ | ranges]) do
-    Enum.map(ranges, &get_digits/1)
+    Enum.map(ranges, &Elf.get_digits/1)
     |> Enum.map(&Enum.map(&1, fn n -> String.to_integer(n) end))
   end
 
   # p2 below here
-  def walk_map2([], {[a, _b], _crumbs}, depth), do: [a]
+  def walk_map2([], {[a, _b], _crumbs}, _depth), do: [a]
 
   def walk_map2([map | maps], {seed_range, crumbs}, depth) do
     ds = map_seed2(map, seed_range)
@@ -78,8 +67,6 @@ defmodule DayFive do
   end
 
   def map_seed2(ranges, seeds) do
-    [seed_lower, seed_upper] = seeds
-
     mappings =
       ranges
       |> Enum.map(fn r -> destination2(seeds, r) end)
@@ -95,14 +82,14 @@ defmodule DayFive do
 
     # find unmapped ranges
     mappings = fill_gaps(mappings, seeds)
-    ensure_source_range_mapped!(mappings) # sanity check
+    ensure_source_range_mapped!(mappings, seeds) # sanity check
 
     # only return destinations
     mappings
     |> Enum.map(fn {_source, destination} -> destination end)
   end
 
-  def ensure_source_range_mapped!(mappings) do
+  def ensure_source_range_mapped!(mappings, [seed_lower, seed_upper]) do
     {[lowerbound, _], _} = Enum.min_by(mappings, fn {[sl, _], _} -> sl end)
 
     # s/min/max : copy paste mistake!
@@ -120,8 +107,8 @@ defmodule DayFive do
       |> Enum.sum()
 
     if rb != ra do
-      IO.inspect({seed_upper, seed_lower})
-      IO.inspect(mappings)
+      IO.inspect({seed_lower, seed_upper}, label: :seed)
+      IO.inspect(mappings |> Enum.sort_by(fn {s, _} -> Elf.fst(s) end), label: :mappings)
       raise "#{rb} != #{ra}"
     end
   end
@@ -150,6 +137,7 @@ defmodule DayFive do
 
     {mappings, _} =
       mappings
+      |> Enum.sort_by(fn {source, _dest} -> Elf.fst(source) end)
       |> Enum.reduce(
         {[], seed_lower},
         fn map, {newMappings, last_upper} ->
@@ -171,35 +159,35 @@ defmodule DayFive do
   def source_end({[_start, x], _}), do: x
 
   def destination2([lower, upper], [destination_lowerbound, source_lowerbound, size]) do
-    source_upperbound = source + size - 1
-    destination_upperbound = destination + size - 1
-    seed_lowerbound = destination + (lower - source)
-    seed_upperbound = destination + (upper - source)
+    source_upperbound = source_lowerbound + size - 1
+    destination_upperbound = destination_lowerbound + size - 1
+    mapped_lowerbound = destination_lowerbound - source_lowerbound + lower
+    mapped_upperbound = destination_lowerbound - source_lowerbound + upper
 
     cond do
       # seed range entirely before source
-      upper < source ->
+      upper < source_lowerbound ->
         nil
 
       # seed range entirely after source
-      lower >= source + size ->
+      lower > source_upperbound ->
         nil
 
       # seed range entirely inside source
       lower >= source_lowerbound and upper <= source_upperbound ->
-        {[lower, upper], [seed_lowerbound, seed_upperbound]}
+        {[lower, upper], [mapped_lowerbound, mapped_upperbound]}
 
       # seed range entirely around source
       lower < source_lowerbound and upper > source_upperbound ->
-        {[s, s + size - 1], [destination_lowerbound, range_upperbound]}
+        {[source_lowerbound, source_upperbound], [destination_lowerbound, destination_upperbound]}
 
       # seed range overlapping with start
       lower < source_lowerbound and upper <= source_upperbound ->
-        {[s, upper], [destination_lowerbound, seed_upperbound]}
+        {[source_lowerbound, upper], [destination_lowerbound, mapped_upperbound]}
 
       # seed range overlapping with end
       lower >= source_lowerbound and upper > source_upperbound ->
-        {[lower, s + size - 1], [seed_lowerbound, destination_upperbound]}
+        {[lower, source_upperbound], [mapped_lowerbound, destination_upperbound]}
     end
   end
 
@@ -231,7 +219,3 @@ defmodule DayFive do
     end
   end
 end
-
-# Aoc.readAndSolve("02.input", &DayTwo.solve/1, ["\r\n", "\n"], true)
-File.stream!("05.example.input", [], :line) |> DayFive.solve()
-File.stream!("05.input", [], :line) |> DayFive.solve()

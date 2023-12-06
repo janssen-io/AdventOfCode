@@ -1,6 +1,15 @@
-Code.require_file("../aoc.exs")
+defmodule Year2023.Day01 do
+    def p1(lines) do
+      lines
+      |> Stream.map(&Elf.get_digits/1)
+      |> Stream.map(&Enum.join/1)
+      |> solve
+    end
 
-defmodule DayOne do
+    def p2(lines) do
+      solve(lines)
+    end
+
     def solve(lines) do
         lines
         |> Stream.map(&String.codepoints/1)
@@ -9,7 +18,6 @@ defmodule DayOne do
         |> Stream.map(&Integer.parse/1)
         |> Stream.map(&elem(&1, 0))
         |> Enum.sum
-        |> IO.inspect
     end
 
     # p1: digit cases
@@ -59,5 +67,3 @@ defmodule DayOne do
       [f, l]
     end
 end
-
-Aoc.readAndSolve("01.input", &DayOne.solve/1, ["\r\n", "\n"], true)

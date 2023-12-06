@@ -11,8 +11,8 @@ defmodule AdventOfCode do
     input = input(year, day, input)
 
     case part do
-      1 -> {:ok, module.part_1(input)}
-      2 -> {:ok, module.part_2(input)}
+      1 -> {:ok, module.p1(input)}
+      2 -> {:ok, module.p2(input)}
       _ -> {:error, "no such part_#{part}"}
     end
   end

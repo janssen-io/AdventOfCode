@@ -13,7 +13,7 @@ $ mix solve [-y 2023] [-d 5] [-p 1] [-x]
 2. Add a file with the name of the day for the example input: `01.example`
 3. Add a file with the name of the day for the puzzle input: `01.input`
 4. Add a file with the name of the day for your solution: `01.ex`
-5. Add a module with the name: `Year2023.Day01` and the methods `part_1/1` and `part_2/1`.  
+5. Add a module with the name: `Year2023.Day01` and the methods `p1/1` and `p2/1`.  
    Both methods must accept a File.Stream (lines) as the first and only argument. 
 
 `lib/20xx` shows an example:
@@ -22,15 +22,15 @@ defmodule Year20xx.Day01 do
   @doc ~S"""
   ## Examples
 
-    iex> Year20xx.Day01.part_1(["123"])
+    iex> Year20xx.Day01.p1(["123"])
     ["123"]
   """
-  def part_1(input) do
+  def p1(input) do
     input
     |> Enum.into([])
   end
 
-  def part_2(input) do
+  def p2(input) do
     input
     |> Enum.into([])
   end

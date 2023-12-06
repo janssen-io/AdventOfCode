@@ -2,10 +2,10 @@ defmodule Year2023.Day06 do
   @doc ~S"""
   ## Examples
 
-    iex> Year2023.Day06.part_1(AdventOfCode.input(2023, 6, :example))
+    iex> Year2023.Day06.p1(AdventOfCode.input(2023, 6, :example))
     288
   """
-  def part_1(input) do
+  def p1(input) do
     input
     |> Enum.map(&Elf.get_digits/1)
     |> Enum.map(fn x -> Enum.map(x, &String.to_integer/1) end)
@@ -17,10 +17,10 @@ defmodule Year2023.Day06 do
   @doc ~S"""
   ## Examples
 
-    iex> Year2023.Day06.part_2(AdventOfCode.input(2023, 6, :example))
+    iex> Year2023.Day06.p2(AdventOfCode.input(2023, 6, :example))
     71503
   """
-  def part_2(input) do
+  def p2(input) do
     input
     |> Enum.map(&Elf.get_digits/1)
     |> Enum.map(&Enum.join/1)
