@@ -5,7 +5,7 @@
     {year, day, part, input} = parse_args!(args)
 
     case AdventOfCode.run_part(year, day, part, input) do
-      {:ok, value} -> if is_binary(value), do: IO.puts(value), else: IO.inspect(value)
+      {:ok, value} -> if is_binary(value), do: IO.puts(value), else: IO.inspect(value, charlists: :as_lists)
       {:error, reason} -> IO.warn(reason)
     end
   end
