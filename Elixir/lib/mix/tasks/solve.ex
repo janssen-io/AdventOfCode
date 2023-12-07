@@ -1,4 +1,4 @@
- defmodule Mix.Tasks.Solve do
+defmodule Mix.Tasks.Solve do
   use Mix.Task
 
   def run(args) do

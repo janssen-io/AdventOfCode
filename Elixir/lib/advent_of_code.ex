@@ -1,9 +1,11 @@
 defmodule AdventOfCode do
   @spec input(integer(), integer(), :example | :input) :: File.Stream.t()
-  def input(year, day, input) do
+  def input(year, day, input \\ :input) do
     input_path(year, day, input)
     |> File.stream!()
   end
+
+  def example(year, day), do: input(year, day, :example)
 
   @spec run_part(integer(), integer(), integer(), :example | :input) :: {:error, String.t()} | {:ok, String.t()}
   def run_part(year, day, part, input \\ :example) do

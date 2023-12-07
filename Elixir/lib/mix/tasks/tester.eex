@@ -1,0 +1,4 @@
+defmodule Year<%= year %>.Day<%= day %>Tests do
+  use ExUnit.Case
+  doctest Year<%= year %>.Day<%= day %>, tags: [year: <%= year %>, day: <%= day %>]
+end
