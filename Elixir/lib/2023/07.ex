@@ -30,7 +30,7 @@ defmodule Year2023.Day07 do
         type: type(hand)
       } end)
     |> Enum.sort(&ranksort/2)
-    |> Enum.with_index
+    |> Enum.with_index(1)
     |> Enum.map(&winnings/1)
     |> Enum.sum
   end
@@ -177,5 +177,5 @@ defmodule Year2023.Day07 do
   def handsort([a|as], [a|bs]), do: handsort(as, bs)
   def handsort([a|_], [b|_]), do: a < b
 
-  def winnings({hand, index}), do: hand.bid * (index + 1)
+  def winnings({hand, rank}), do: hand.bid * rank
 end
