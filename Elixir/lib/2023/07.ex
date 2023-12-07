@@ -173,11 +173,9 @@ defmodule Year2023.Day07 do
     iex> Year2023.Day07.handsort([9, 0, 0, 0, 0], [2, 3, 4, 5, 6])
     false
   """
-  def handsort([a,b,c,d,e], [a,b,c,d,z]), do: e < z
-  def handsort([a,b,c,d,_], [a,b,c,y,_]), do: d < y
-  def handsort([a,b,c,_,_], [a,b,x | _]), do: c < x
-  def handsort([a,b,_,_,_], [a,w   | _]), do: b < w
-  def handsort([a,_,_,_,_], [v     | _]), do: a < v
+  def handsort([], []), do: raise "hands cannot be the same"
+  def handsort([a|as], [a|bs]), do: handsort(as, bs)
+  def handsort([a|_], [b|_]), do: a < b
 
   def winnings({hand, index}), do: hand.bid * (index + 1)
 end
