@@ -151,31 +151,8 @@ defmodule Year2023.Day07 do
     false
   """
   def ranksort(%{ cards: hand_left, type: type_left }, %{ cards: hand_right, type: type_right }) do
-    if (type_left == type_right) do
-      handsort(hand_left, hand_right)
-    else
-      type_left < type_right
-    end
+    { type_left, hand_left } < { type_right, hand_right }
   end
-
-  @doc ~S"""
-  ## Examples
-    iex> Year2023.Day07.handsort([1, 2, 3, 4, 5], [1, 2, 3, 4, 6])
-    true
-    iex> Year2023.Day07.handsort([1, 2, 3, 4, 9], [1, 2, 3, 5, 6])
-    true
-    iex> Year2023.Day07.handsort([1, 2, 3, 9, 9], [1, 2, 4, 5, 6])
-    true
-    iex> Year2023.Day07.handsort([1, 2, 9, 9, 9], [1, 3, 4, 5, 6])
-    true
-    iex> Year2023.Day07.handsort([1, 9, 9, 9, 9], [2, 3, 4, 5, 6])
-    true
-    iex> Year2023.Day07.handsort([9, 0, 0, 0, 0], [2, 3, 4, 5, 6])
-    false
-  """
-  def handsort([], []), do: raise "hands cannot be the same"
-  def handsort([a|as], [a|bs]), do: handsort(as, bs)
-  def handsort([a|_], [b|_]), do: a < b
 
   def winnings({hand, rank}), do: hand.bid * rank
 end
