@@ -25,4 +25,14 @@ defmodule Elf do
   def fst({a, _}), do: a
   def snd([_, b]), do: b
   def snd({_, b}), do: b
+
+  @doc ~S"""
+    iex> Elf.lcm(2, 3)
+    6
+    iex> Elf.lcm(4, 4)
+    4
+    iex> Elf.lcm(6, 9)
+    18
+  """
+  def lcm(a, b), do: div((a * b), Integer.gcd(a, b))
 end
