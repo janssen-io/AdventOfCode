@@ -12,6 +12,18 @@ $ mix solve [--year 2023] [--day 5] [--part 1] [--example]
 $ mix solve [-y 2023] [-d 5] [-p 1] [-x]
 ```
 
+### 1.1 Benchmarking
+First execute `mix deps.get` to install Benchee.
+
+`mix benchmark` defaults to running the current year, all days up to the current day.
+You can provide a space-separated list of days with the `--days/-d` flag to benchmark specific days.
+
+```bash
+$ mix benchmark [--year 2023] [--days "4 5"] [--example]
+$ mix benchmark [-y 2023] [-d "4 5"] [-x]
+```
+
+
 ## 2. Adding new solutions
 #### Automatically
 
