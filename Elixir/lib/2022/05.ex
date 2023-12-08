@@ -1,25 +1,38 @@
-Code.require_file("../aoc.exs")
-
-defmodule Puzzle do
-  def solve([stacks, instructions]) do
-    crates = parse(stacks)
-    Mover.new()
-    instructions
-    |> String.split("\n", trim: true)
-    |> then(fn ins -> [
-          process(crates, ins, &Enum.reverse/1),
-          process(crates, ins),
-        ] end)
-    |> Enum.map(fn part -> Enum.map(part, &hd/1) |> Enum.join end)
-    |> IO.inspect
+defmodule Year2022.Day05 do
+  @doc ~S"""
+  iex> AdventOfCode.example(2022, 05)
+  ...> |> Year2022.Day05.p1
+  "CMZ"
+  """
+  def p1(lines) do
+    lines
+    |> Enum.chunk_by(&(&1 != ""))
+    |> Enum.reject(&(&1 == [""]))
+    |> solve(&Enum.reverse/1)
   end
 
-  def process(crates, instructions) do
-    process(crates, instructions, fn x -> x end)
+  @doc ~S"""
+  iex> AdventOfCode.example(2022, 05)
+  ...> |> Year2022.Day05.p2
+  "MCD"
+  """
+  def p2(lines) do
+    lines
+    |> Enum.chunk_by(&(&1 != ""))
+    |> Enum.reject(&(&1 == [""]))
+    |> solve(&(&1))
+  end
+
+  def solve([stacks, instructions], f) do
+    crates = parse(stacks)
+    Mover.new()
+    process(crates, instructions, f)
+    |> Enum.map(&hd/1)
+    |> Enum.join()
   end
 
   def process(crates, instructions, f) do
-    instructions 
+    instructions
     |> Enum.reduce(crates, fn (instruction, cs) ->
       [[n], [a], [b]] = Regex.scan(~r/\d+/, instruction)
       [amount, from, to] = Enum.map([n, a, b], &String.to_integer/1)
@@ -30,7 +43,6 @@ defmodule Puzzle do
 
   def parse(stacks) do
     stacks
-      |> String.split(["\r\n", "\n"])
       |> Enum.take_while(&(!Regex.match?(~r/\d/, &1)))
       |> Enum.map(&(String.split(&1, "", trim: true)))
       # Transpose
@@ -78,8 +90,4 @@ defmodule Mover do
       end
     end
   end
-
 end
-
-Aoc.readAndSolve("05.input", &Puzzle.solve/1, ["\r\n\r\n", "\n\n"])
-

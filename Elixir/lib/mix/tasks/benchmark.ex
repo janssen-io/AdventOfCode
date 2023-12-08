@@ -11,8 +11,8 @@ defmodule Mix.Tasks.Benchmark do
   end
 
   def parse_args!(args) do
-    switches = [year: :integer, days: :string]
-    aliases = [y: :year, d: :days]
+    switches = [year: :integer, days: :string, example: :boolean]
+    aliases = [y: :year, d: :days, x: :example]
 
     opts =
       case OptionParser.parse(args, aliases: aliases, strict: switches) do

@@ -1,16 +1,27 @@
-Code.require_file("../aoc.exs")
-
-defmodule Puzzle do
-  def solve(instructions) do
-    instructions
+defmodule Year2022.Day07 do
+  @doc ~S"""
+  iex> AdventOfCode.example(2022, 07)
+  ...> |> Year2022.Day07.p1
+  94853 + 584
+  """
+  def p1(lines) do
+    lines
     |> Stream.reject(&(&1 == ""))
     |> Enum.reduce({[], %{}}, flip(&read/2))
     |> then(fn {_, fs} -> Map.to_list fs end)
     |> Enum.filter(fn {_, size} -> size <= 100_000 end)
     # |> Enum.sort_by(fn {k, _} -> k end)
-    |> IO.inspect
     |> Enum.map(&snd/1)
     |> Enum.sum
+  end
+
+  @doc ~S"""
+  iex> AdventOfCode.example(2022, 07)
+  ...> |> Year2022.Day07.p2
+  0
+  """
+  def p2(lines) do
+    0
   end
 
   def snd({_, x}) do x end
@@ -47,9 +58,3 @@ defmodule Puzzle do
     {pwd, updated_fs}
   end
 end
-
-Aoc.readAndSolve("07.example.input", &Puzzle.solve/1, ["\r\n", "\n"], trim: true)
-|> IO.inspect(label: "Part 1")
-
-Aoc.readAndSolve("07.input", &Puzzle.solve/1, ["\r\n", "\n"], trim: true)
-|> IO.inspect(label: "Part 1")

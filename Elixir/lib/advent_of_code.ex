@@ -3,6 +3,7 @@ defmodule AdventOfCode do
   def input(year, day, input \\ :input) do
     input_path(year, day, input)
     |> File.stream!()
+    |> Stream.map(&(String.trim(&1, "\n")))
   end
 
   def example(year, day), do: input(year, day, :example)
