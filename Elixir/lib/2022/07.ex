@@ -20,7 +20,7 @@ defmodule Year2022.Day07 do
   ...> |> Year2022.Day07.p2
   0
   """
-  def p2(lines) do
+  def p2(_) do
     0
   end
 

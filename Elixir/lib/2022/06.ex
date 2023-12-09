@@ -46,7 +46,7 @@ defmodule Year2022.Day06 do
   defp findMarker(signal, size) do
     signal
     |> Enum.with_index()
-    |> Enum.map(fn {char, idx} -> Enum.slice(signal, idx, size) end)
+    |> Enum.map(fn {_, idx} -> Enum.slice(signal, idx, size) end)
     |> Enum.find_index(fn marker -> Enum.uniq(marker) |> Enum.count() == size end)
   end
 end
