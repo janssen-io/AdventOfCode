@@ -7,7 +7,7 @@ defmodule Year2023.Day06 do
   """
   def p1(input) do
     input
-    |> Enum.map(&Elf.get_digits/1)
+    |> Enum.map(&Elf.get_ints/1)
     |> Enum.map(fn x -> Enum.map(x, &String.to_integer/1) end)
     |> Enum.zip()
     |> Enum.map(fn {time, distance} -> race(time, distance) end)
@@ -22,7 +22,7 @@ defmodule Year2023.Day06 do
   """
   def p2(input) do
     input
-    |> Enum.map(&Elf.get_digits/1)
+    |> Enum.map(&Elf.get_ints/1)
     |> Enum.map(&Enum.join/1)
     |> Enum.map(&String.to_integer/1)
     |> then(fn [time, distance] -> race(time, distance) end)

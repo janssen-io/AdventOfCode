@@ -6,7 +6,7 @@ defmodule Year2023.Day05 do
       Enum.take(parts, 1)
       |> hd
       |> hd
-      |> Elf.get_digits
+      |> Elf.get_ints
       |> Enum.map(&String.to_integer/1)
       |> Enum.map(fn n -> [n, n] end)
 
@@ -26,7 +26,7 @@ defmodule Year2023.Day05 do
       Enum.take(parts, 1)
       |> hd
       |> hd
-      |> Elf.get_digits
+      |> Elf.get_ints
       |> Enum.map(&String.to_integer/1)
       |> Enum.chunk_every(2)
       |> Enum.map(fn [a, b] -> [a, a + b - 1] end)
@@ -54,7 +54,7 @@ defmodule Year2023.Day05 do
   end
 
   def parse_map([_ | ranges]) do
-    Enum.map(ranges, &Elf.get_digits/1)
+    Enum.map(ranges, &Elf.get_ints/1)
     |> Enum.map(&Enum.map(&1, fn n -> String.to_integer(n) end))
   end
 

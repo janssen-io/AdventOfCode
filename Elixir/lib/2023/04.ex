@@ -15,8 +15,8 @@ defmodule Year2023.Day04 do
 
   def calculate(line) do
     [left, right] = String.split(line, "|")
-    winning = Elf.get_digits(left) |> tl |> MapSet.new
-    hand = Elf.get_digits(right) |> MapSet.new
+    winning = Elf.get_ints(left) |> tl |> MapSet.new
+    hand = Elf.get_ints(right) |> MapSet.new
     MapSet.intersection(winning, hand)
     |> MapSet.size
   end

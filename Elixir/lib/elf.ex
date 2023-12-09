@@ -3,12 +3,34 @@ defmodule Elf do
 
   @doc ~S"""
     ## Example
-    iex> Elf.get_digits("Part 1: 10 12 14 -15")
-    ["1", "10", "12", "14", "15"]
+    iex> Elf.get_ints("Part 1: 10 12 14 -15", :-)
+    ["1", "10", "12", "14", "-15"]
   """
-  def get_digits(string) do
+  def get_ints(string, :-) do
+    Regex.scan(~r/-?\d+/, string)
+    |> List.flatten
+  end
+
+  def get_ints(string, :+) do
     Regex.scan(~r/\d+/, string)
     |> List.flatten
+  end
+  @doc ~S"""
+    iex> Elf.get_ints("Part 1: 10 12 14 -15")
+    ["1", "10", "12", "14", "15"]
+  """
+  def get_ints(string), do: get_ints(string, :+)
+
+  @doc ~S"""
+    ## Example
+    iex> Elf.parse_ints("Part 1: 10 12 14 -15")
+    [1, 10, 12, 14, 15]
+    iex> Elf.parse_ints("Part 1: 10 12 14 -15", :-)
+    [1, 10, 12, 14, -15]
+  """
+  def parse_ints(string, sign \\ :+) do
+    get_ints(string, sign)
+    |> Enum.map(&String.to_integer/1)
   end
 
   @doc ~S"""

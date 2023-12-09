@@ -1,7 +1,7 @@
 defmodule Year2023.Day01 do
     def p1(lines) do
       lines
-      |> Stream.map(&Elf.get_digits/1)
+      |> Stream.map(&Elf.get_ints/1)
       |> Stream.map(&Enum.join/1)
       |> solve
     end
