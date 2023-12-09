@@ -17,7 +17,10 @@ defmodule Year2023.Day09 do
   0
   """
   def p2(lines) do
-    0
+    lines
+    |> Stream.map(&(Elf.parse_ints(&1, :-)))
+    |> Stream.map(&extend_backwards/1)
+    |> Enum.reduce(0, fn [h|_], acc -> acc + h end)
   end
 
   @doc ~S"""
@@ -68,4 +71,17 @@ defmodule Year2023.Day09 do
     {ys, n} = append_add(xs, last)
     {[x | ys], n}
   end
+
+  def extend_backwards(xs) do
+    {diff, is_stable, _} = difference_list(xs)
+
+    if is_stable do
+      prepend_subtract(xs, diff)
+    else
+      new_diff = extend_backwards(diff)
+      prepend_subtract(xs, new_diff)
+    end
+  end
+
+  def prepend_subtract([x|xs], [y|_]), do: [x-y|xs]
 end
