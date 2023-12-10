@@ -54,6 +54,7 @@ defmodule Year2023.Day09 do
   iex> Year2023.Day09.extend_series([1,1,2,3,5])
   11
   """
+  def extend_series(xs), do: extend_series(xs, fn xs, inc -> List.last(xs) + inc end)
   def extend_series(xs, f) do
     {diff, is_stable} = difference_list(xs)
 
