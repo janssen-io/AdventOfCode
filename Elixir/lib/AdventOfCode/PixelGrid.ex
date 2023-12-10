@@ -32,7 +32,7 @@ defmodule AdventOfCode.PixelGrid do
     [(1.0 - rem(depth, max_depth) / max_depth) * 240 / 360, 1, 0.5]
   end
 
-  def print(name) do
+  def print(name, character_map \\ %{}) do
     map = Agent.get(name, & &1)
     coords = MapSet.new(Map.keys(map))
     {max_x, _} = Enum.max_by(coords, fn {x, _} -> x end)
@@ -44,11 +44,7 @@ defmodule AdventOfCode.PixelGrid do
       for x <- 0..max_x do
         [r,g,b] = Map.get(map, {x, y}, [5,5,5])
         IO.write(IO.ANSI.color_background(r, g, b))
-        if {x, y} == {310, 61} do
-          IO.write(IO.ANSI.black_background() <> "S")
-        else
-          if {x, y} in coords, do: IO.write(" "), else: IO.write(" ")
-        end
+        IO.write(Map.get(character_map, {x, y}, " "))
         IO.write(IO.ANSI.reset())
       end
 

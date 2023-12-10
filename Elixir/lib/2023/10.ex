@@ -17,6 +17,7 @@ defmodule Year2023.Day10 do
     parse(lines)
     |> find_loop()
     |> MapSet.size()
+    |> then(fn l -> div(l + 1, 2) end)
   end
 
   @doc ~S"""
@@ -25,28 +26,23 @@ defmodule Year2023.Day10 do
   0
   """
   def p2(lines) do
-    Application.put_env(:elixir, :ansi_enabled, true)
     map = parse(lines)
     loop = find_loop(map)
-    IO.inspect(scaled(map[:start]), label: :exploded_start)
-    new_map = explode(loop, map)
-    new_loop = MapSet.new(Map.keys(new_map) |> Enum.filter(&is_coord/1))
-    IO.inspect(MapSet.size(new_loop) / 3, label: :loop_size)
+    map_3x3 = explode(loop, map)
+    loop_3x3 = MapSet.new(Map.keys(map_3x3) |> Enum.filter(&is_coord/1))
 
-    AdventOfCode.PixelGrid.new(:heatmap)
-
-    outside =
+    # AdventOfCode.PixelGrid.new(:heatmap)
+    outside_3x3 =
       floodfill(
-        new_loop,
-        {-1, new_map[:max_x] + 1, -1, new_map[:max_y] + 1},
+        loop_3x3,
+        {-1, map_3x3[:max_x] + 1, -1, map_3x3[:max_y] + 1},
         {-1, -1},
         MapSet.new()
       )
 
-    new_loop |> Enum.each(fn coords -> AdventOfCode.PixelGrid.set(:heatmap, coords, [0, 0, 0]) end)
+    # debugging: print heatmap
+    # loop_3x3 |> Enum.each(fn coords -> AdventOfCode.PixelGrid.set(:heatmap, coords, [0, 0, 0]) end)
     # AdventOfCode.PixelGrid.print(:heatmap)
-
-    # draw(new_loop, new_map, outside)
 
     exploded_centers =
       Map.keys(map)
@@ -54,14 +50,17 @@ defmodule Year2023.Day10 do
       |> Enum.map(&scaled/1)
       |> MapSet.new()
 
-    originals = MapSet.intersection(exploded_centers, outside)
+    outside = MapSet.intersection(exploded_centers, outside_3x3)
 
-    AdventOfCode.PixelGrid.new(:small)
-    originals |> Enum.each(fn coords -> AdventOfCode.PixelGrid.set(:small, original(coords), [0, 255, 255]) end)
-    loop |> Enum.each(fn coords -> AdventOfCode.PixelGrid.set(:small, coords, [0, 0, 0]) end)
-    AdventOfCode.PixelGrid.print(:small)
+    # debugging: print floodfill on original map
+    # AdventOfCode.PixelGrid.new(:small)
+    # outside |> Enum.each(fn coords -> AdventOfCode.PixelGrid.set(:small, original(coords), [0, 255, 255]) end)
+    # loop |> Enum.each(fn coords -> AdventOfCode.PixelGrid.set(:small, coords, [0, 0, 0]) end)
+    # loop_only_map = Map.filter(map, fn {k, _} -> k in loop end)
+    # AdventOfCode.PixelGrid.print(:small, loop_only_map)
 
-    19600 - MapSet.size(loop) - MapSet.size(originals)
+    grid_size = 140 * 140
+    grid_size - MapSet.size(loop) - MapSet.size(outside)
   end
 
   def is_coord({_, _}), do: true
@@ -78,6 +77,9 @@ defmodule Year2023.Day10 do
     |> Map.to_list()
     |> Enum.reduce(new_map, &explode_shape/2)
   end
+
+  # by looking at my personal input, I can see that S must be a 7
+  def explode_shape({coords, "S"}, m), do: explode_shape({coords, "7"}, m)
 
   def explode_shape({coords, shape = "|"}, m) do
     new_center = {xn, yn} = scaled(coords)
@@ -127,10 +129,6 @@ defmodule Year2023.Day10 do
     |> Map.put({xn, yn - 1}, "|")
   end
 
-  def explode_shape({coords, shape = "S"}, m) do
-    explode_shape({coords, "7"}, m)
-  end
-
   def scaled({x, y}), do: {x * 3 + 1, y * 3 + 1}
   def original({x, y}), do: {div(x - 1, 3), div(y - 1, 3)}
 
@@ -144,7 +142,7 @@ defmodule Year2023.Day10 do
     if x < min_x or x > max_x or y < min_y or y > max_y or coords in breadcrumbs or coords in loop do
       breadcrumbs
     else
-      pixel(coords, depth)
+      # mark_heatmap(coords, depth)
 
       MapSet.put(breadcrumbs, coords)
       |> f(loop, bounds, north(coords), depth + 1)
@@ -154,7 +152,7 @@ defmodule Year2023.Day10 do
     end
   end
 
-  def pixel({x, y}, depth) do
+  def mark_heatmap({x, y}, depth) do
     AdventOfCode.PixelGrid.set(:heatmap, {x, y}, %{heatmap: depth, max: 10_000})
   end
 
@@ -179,39 +177,11 @@ defmodule Year2023.Day10 do
     end)
   end
 
-  def draw(loop, map, outside \\ MapSet.new()) do
-    for y <- 0..map[:max_y] do
-      c =
-        for x <- 0..map[:max_x] do
-          cond do
-            {x, y} in loop and {x, y} in outside ->
-              IO.write("A")
-              0
-
-            {x, y} in loop ->
-              IO.write(Map.get(map, {x, y}))
-              0
-
-            {x, y} in outside ->
-              IO.write(" ")
-              0
-
-            true ->
-              IO.write(".")
-              1
-          end
-        end
-
-      IO.write("\n")
-      c
-    end
-    |> List.flatten()
-    |> Enum.sum()
-  end
-
   def find_loop(map) do
     {x, y} = Map.get(map, :start)
-    walk_loop(map, {x, y + 1}, "N", MapSet.new([{x, y}, {x, y + 1}]))
+    # by looking at the input, I could see the start is a 7.
+    # a 7 can be entered from the W or from the S
+    walk_loop(map, {x, y}, "W", MapSet.new([{x, y}]))
   end
 
   def north({x, y}), do: {x, y - 1}
@@ -222,7 +192,7 @@ defmodule Year2023.Day10 do
   def walk_loop(map, start, from_dir, breadcrumbs) do
     case walk(map, start, from_dir) do
       nil ->
-        raise "you didn'scaled walk right..."
+        raise "you didn't walk right..."
 
       {next_coord, next_from_dir} ->
         if next_coord in breadcrumbs do
@@ -233,8 +203,11 @@ defmodule Year2023.Day10 do
     end
   end
 
-  def walk(map, coord = {x, y}, from_dir) do
+  def walk(map, coord, from_dir) do
     shape = Map.get(map, coord)
+
+    # by looking at the input, I could see the start is a 7.
+    shape = if shape == "S", do: "7", else: shape
 
     case shape do
       nil ->
