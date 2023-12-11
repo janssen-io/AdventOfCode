@@ -71,7 +71,7 @@ defmodule AdventOfCode.PixelGrid do
     [r,g,b] |> Enum.map(&to_255/1)
   end
 
-  def to_255(num), do: Enum.min([255, Float.round(256 * num) |> trunc])
+  def to_255(num), do: Enum.min([255, Float.round(256.0 * num) |> trunc])
 
   defp hue_to_rgb(p, q, t) do
     t = if t < 0, do: t + 1, else: t

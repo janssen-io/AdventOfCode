@@ -57,4 +57,14 @@ defmodule Elf do
     18
   """
   def lcm(a, b), do: div((a * b), Integer.gcd(a, b))
+
+  @doc ~S"""
+  iex> Elf.convert_range({5, 10}, {20, 30}, 8)
+  23
+  iex> Elf.convert_range({5, 10}, {20, 30}, 8.0)
+  23.0
+  """
+  def convert_range(a, b, n) when is_integer(n), do: convert_range(a, b, n + 0.0) |> Float.round() |> trunc
+  def convert_range({x1, x2}, {y1, y2}, n) when is_float(n), do: ((n - x1) / x2) * (y2 - y1) + y1
+
 end
