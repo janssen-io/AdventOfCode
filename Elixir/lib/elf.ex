@@ -68,3 +68,35 @@ defmodule Elf do
   def convert_range({x1, x2}, {y1, y2}, n) when is_float(n), do: ((n - x1) / x2) * (y2 - y1) + y1
 
 end
+
+defmodule Memo do
+  def new(name), do: Agent.start_link(fn -> %{} end, name: name)
+
+  def get(name, key, default \\ nil), do: Agent.get(name, &Map.get(&1, key, default))
+  def set(name, key, value), do: Agent.update(name, &Map.put(&1, key, value))
+  def update(name, key, f, default \\ 0), do: Agent.update(name, &Map.update(&1, key, default, f))
+
+  def get_or_set(name, key, factory) do
+    cached = get(name, key)
+
+    if cached != nil do
+      update(name, :hits, &(&1 + 1), 1)
+      hits = get(name, :hits)
+      if (rem(hits, 1000) == 0) do
+        misses = get(name, :misses)
+        IO.inspect({hits, misses})
+      end
+      cached
+    else
+      update(name, :misses, &(&1 + 1), 1)
+      misses = get(name, :misses)
+      if (rem(misses, 1000) == 0) do
+      hits = get(name, :hits, 0)
+        IO.inspect({hits, misses})
+      end
+      value = factory.()
+      set(name, key, value)
+      value
+    end
+  end
+end
