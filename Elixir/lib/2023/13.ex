@@ -7,15 +7,7 @@ defmodule Year2023.Day13 do
   405
   """
   def p1(lines) do
-    lines
-    |> Stream.chunk_by(fn l -> l == "" end)
-    |> Stream.reject(fn chunk -> chunk == [""] end)
-    |> Stream.map(fn grid ->
-      h = find_reflection(grid, &is_exact/2, 0)
-      v = find_reflection(transpose(grid), &is_exact/2, 0)
-      100 * h + v
-    end)
-    |> Enum.sum()
+    score(lines, &is_exact/2, 0)
   end
 
   @doc ~S"""
@@ -24,52 +16,52 @@ defmodule Year2023.Day13 do
   400
   """
   def p2(lines) do
+    score(lines, &is_either/2, 1)
+  end
+
+  def score(lines, is_mirror, num_smudges) do
     lines
     |> Stream.chunk_by(fn l -> l == "" end)
     |> Stream.reject(fn chunk -> chunk == [""] end)
     |> Stream.map(fn grid ->
-      h = find_reflection(grid, &is_either/2, 1)
-      v = find_reflection(transpose(grid), &is_either/2, 1)
-      IO.inspect({h, v})
+      h = find_reflection(grid, is_mirror, num_smudges)
+      v = find_reflection(transpose(grid), is_mirror, num_smudges)
       100 * h + v
     end)
     |> Enum.sum()
   end
 
   def find_reflection(rows, is_mirror, total_smudges \\ 0, i \\ 1) do
-    if i >= Enum.count(rows) do
-      0
-    else
-      {l, r} = Enum.split(rows, i)
-      {lc, rc} = {Enum.count(l), Enum.count(r)}
+    {l, r} = Enum.split(rows, i)
 
-      if lc == 0 or rc == 0 do
+    cond do
+      i >= Enum.count(rows) ->
+        0
+
+      Enum.count(l) == 0 or Enum.count(r) == 0 ->
         find_reflection(rows, is_mirror, total_smudges, i + 1)
-      else
-        l = Enum.reverse(l)
 
-        {l, r} =
-          if lc > rc do
-            {Enum.take(l, rc), r}
-          else
-            {l, Enum.take(r, lc)}
-          end
-
-        {smudges, is_reflected} =
-          Enum.zip(l, r)
-          |> Enum.reduce({0, true}, fn {rl, rr}, {smudges, is_reflected} ->
-            {bl, br} = {to_int(rl), to_int(rr)}
-            smudges = if is_smudged(bl, br), do: smudges + 1, else: smudges
-            {smudges, is_reflected and is_mirror.(bl, br)}
-          end)
+      true ->
+        {smudges, is_reflected} = count_smudges(Enum.reverse(l), r, is_mirror)
 
         if is_reflected and smudges == total_smudges do
           i
         else
           find_reflection(rows, is_mirror, total_smudges, i + 1)
         end
-      end
     end
+  end
+
+  def count_smudges(l, r, is_mirror) do
+    Enum.zip(l, r)
+    |> Enum.reduce({0, true}, fn {row_left, row_right}, {smudges, is_reflected} ->
+      {bin_left, bin_right} = {to_int(row_left), to_int(row_right)}
+
+      {
+        smudges + ((is_smudged(bin_left, bin_right) && 1) || 0),
+        is_reflected and is_mirror.(bin_left, bin_right)
+      }
+    end)
   end
 
   def transpose(lines) do
@@ -99,10 +91,6 @@ defmodule Year2023.Day13 do
   iex> Year2023.Day13.is_smudged(0b1100, 0b1011)
   false
   """
-  def is_smudged(left, right) when left < right do
-    is_smudged(right, left)
-  end
-
   def is_smudged(left, right) do
     diff = bxor(left, right)
     !is_exact(left, right) and (diff &&& diff - 1) == 0
