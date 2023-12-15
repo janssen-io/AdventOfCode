@@ -10,7 +10,6 @@ defmodule Year2023.Day15 do
     |> hd()
     |> String.split(",")
     |> Enum.map(&hash/1)
-    |> IO.inspect()
     |> Enum.sum()
   end
 
@@ -48,18 +47,19 @@ defmodule Year2023.Day15 do
   end
 
   def box(instruction, boxes) do
-    [[_instruction, label, op | opt_focal_length ]] = Regex.scan(~r/([a-z]+)(=|-)(\d+)?/, instruction)
+    [[_instruction, label, _op | opt_focal_length ]] = Regex.scan(~r/([a-z]+)(=|-)(\d+)?/, instruction)
     id = hash(label)
-    case op do
-      "=" ->
-        lenses =
-          Map.get(boxes, id, [])
-          |> put_lense(label, hd(opt_focal_length) |> String.to_integer())
 
-        Map.put(boxes, id, lenses)
-      "-" ->
-        lenses = Map.get(boxes, id, [])
-        Map.put(boxes, id, Enum.reject(lenses, fn {type, _focal_length} -> type == label end))
+    case opt_focal_length do
+      [focal_length] ->
+        Map.get(boxes, id, [])
+        |> put_lense(label, focal_length |> String.to_integer())
+        |> then(&Map.put(boxes, id, &1))
+
+      [] ->
+        Map.get(boxes, id, [])
+        |> Enum.reject(fn {type, _focal_length} -> type == label end)
+        |> then(&Map.put(boxes, id, &1))
     end
   end
 
@@ -77,7 +77,7 @@ defmodule Year2023.Day15 do
   """
   def put_lense(lenses, label, focal_length) do
     {was_replaced, new_lenses} =
-      Enum.reduce(lenses, {false, []}, fn {type, _focal_length} = current_lense, {was_replaced, new_lenses} = acc ->
+      Enum.reduce(lenses, {false, []}, fn {type, _focal_length} = current_lense, {was_replaced, new_lenses} ->
         cond do
           type == label -> {true, [{type, focal_length} | new_lenses]}
           true -> {was_replaced, [current_lense | new_lenses ]}
