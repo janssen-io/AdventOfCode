@@ -53,13 +53,33 @@ defmodule Year2023.Day15 do
     case opt_focal_length do
       [focal_length] ->
         Map.get(boxes, id, [])
-        |> put_lense(label, focal_length |> String.to_integer())
+        |> alt_put_lense(label, focal_length |> String.to_integer())
         |> then(&Map.put(boxes, id, &1))
 
       [] ->
         Map.get(boxes, id, [])
-        |> Enum.reject(fn {type, _focal_length} -> type == label end)
+        |> Enum.reject(fn {type, _} -> type == label end)
         |> then(&Map.put(boxes, id, &1))
+    end
+  end
+
+  @doc """
+  iex> Year2023.Day15.alt_put_lense([], "a", 1)
+  [{"a", 1}]
+  iex> Year2023.Day15.alt_put_lense([{"a", 1}], "a", 2)
+  [{"a", 2}]
+  iex> Year2023.Day15.alt_put_lense([{"a", 1}, {"b", 2}], "a", 2)
+  [{"a", 2}, {"b", 2}]
+  iex> Year2023.Day15.alt_put_lense([{"a", 1}, {"b", 2}], "b", 3)
+  [{"a", 1}, {"b", 3}]
+  iex> Year2023.Day15.alt_put_lense([{"a", 1}, {"b", 2}], "c", 3)
+  [{"a", 1}, {"b", 2}, {"c", 3}]
+  """
+  def alt_put_lense(lenses, label, focal_length) do
+    if label in (for {type, _} <- lenses, do: type) do
+      for {type, fl} <- lenses, do: {type, (if type == label, do: focal_length, else: fl)}
+    else
+      lenses ++ [ {label, focal_length} ]
     end
   end
 
