@@ -1,4 +1,9 @@
 defmodule Year2023.Day16 do
+
+  @draw false
+  @depth 10_000
+  @framerate 32
+
   @doc ~S"""
   iex> AdventOfCode.example(2023, 16)
   ...> |> Year2023.Day16.p1
@@ -20,13 +25,22 @@ defmodule Year2023.Day16 do
   end
 
   def run(grid, entries) do
+    AdventOfCode.PixelGrid.new(:heatmap)
+    if @draw, do: IO.puts(IO.ANSI.clear() <> IO.ANSI.cursor_up(3000))
+
     entries
     |> Enum.reduce([], fn entry, results ->
         r = send_beam(grid, [entry])
         |> count_energised()
+        if r > 100, do: IO.inspect({entry, r})
         [r | results]
       end)
       |> Enum.max()
+
+    if @draw do
+      IO.puts(IO.ANSI.cursor_up(3000))
+      AdventOfCode.PixelGrid.print(:heatmap)
+    end
   end
 
   def parse_grid(lines) do
@@ -61,51 +75,58 @@ defmodule Year2023.Day16 do
          {coord, direction} in seen do
       send_beam(map, next, seen)
     else
+      if @draw do
+        depth = MapSet.size(seen)
+        AdventOfCode.PixelGrid.set(:heatmap, coord, %{ heatmap: depth, max: @depth })
+        if rem(depth, @framerate) == 0 do
+          IO.puts(IO.ANSI.cursor_up(3000))
+          AdventOfCode.PixelGrid.print(:heatmap)
+        end
+      end
+
       location = Map.get(map, coord, MapSet.new())
 
       todo =
         cond do
           MapSet.size(location) == 0 ->
-            [{move(coord, direction), direction} | next]
+            [{move(coord, direction), direction}]
 
           true ->
             cond do
               :split_v in location && is_v(direction) ->
-                [{move(coord, direction), direction} | next]
+                [{move(coord, direction), direction}]
 
               :split_v in location ->
                 [
                   {move(coord, :n), :n},
                   {move(coord, :s), :s}
-                  | next
                 ]
 
               :split_h in location && !is_v(direction) ->
-                [{move(coord, direction), direction} | next]
+                [{move(coord, direction), direction}]
 
               :split_h in location ->
                 [
                   {move(coord, :e), :e},
                   {move(coord, :w), :w}
-                  | next
                 ]
 
               :mirror_ne in location ->
                 bounced = bounce(:mirror_ne, direction)
-                [{move(coord, bounced), bounced} | next]
+                [{move(coord, bounced), bounced}]
 
               :mirror_se in location ->
                 bounced = bounce(:mirror_se, direction)
-                [{move(coord, bounced), bounced} | next]
+                [{move(coord, bounced), bounced}]
 
               true ->
-                [{move(coord, direction), direction} | next]
-            end
+                [{move(coord, direction), direction}]
+           end
         end
 
       send_beam(
         Map.put(map, coord, MapSet.put(location, direction)),
-        todo,
+        next ++ todo,
         MapSet.put(seen, {coord, direction})
       )
     end

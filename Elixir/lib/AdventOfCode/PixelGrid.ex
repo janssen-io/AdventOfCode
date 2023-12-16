@@ -44,7 +44,7 @@ defmodule AdventOfCode.PixelGrid do
       for x <- 0..max_x do
         [r,g,b] = Map.get(map, {x, y}, [5,5,5])
         IO.write(IO.ANSI.color_background(r, g, b))
-        IO.write(Map.get(character_map, {x, y}, " "))
+        IO.write(Map.get(character_map, {x, y}, "  "))
         IO.write(IO.ANSI.reset())
       end
 
