@@ -13,7 +13,7 @@ defmodule Year2023.Day17 do
     grid = parse_grid(lines)
     IO.inspect(target(grid))
     start = Heap.new(&by_cost/2)
-    r = find_path(grid, target(grid), 3, Heap.push(start, %State{}))
+    r = find_path(grid, target(grid), 0, 3, Heap.push(start, %State{}))
     AdventOfCode.PixelGrid.new(:crumbs)
     r.last_moves
     |> Enum.each(fn {x, y} ->
@@ -32,7 +32,20 @@ defmodule Year2023.Day17 do
   0
   """
   def p2(lines) do
-    0
+    grid = parse_grid(lines)
+    IO.inspect(target(grid))
+    start = Heap.new(&by_cost/2)
+    r = find_path(grid, target(grid), 4, 10, Heap.push(start, %State{}))
+    AdventOfCode.PixelGrid.new(:crumbs)
+    r.last_moves
+    |> Enum.each(fn {x, y} ->
+      AdventOfCode.PixelGrid.set(:crumbs, {x, y}, %{ heatmap: Map.get(grid, {x, y}, 9), max: 10})
+    end)
+  AdventOfCode.PixelGrid.print(:crumbs, grid)
+
+  counted = r.last_moves
+  |> Enum.reduce(0, fn {x, y}, sum -> Map.get(grid, {x, y}, 0) + sum end)
+  {r.cost, counted - Map.get(grid, {0, 0})}
   end
 
   def parse_grid(lines) do
@@ -47,45 +60,37 @@ defmodule Year2023.Day17 do
     end)
   end
 
-  def find_path(grid, destination, max_straight, heap, seen \\ MapSet.new())
+  def find_path(grid, destination, min_straight, max_straight, heap, seen \\ MapSet.new())
 
-  def find_path(grid, destination, max_straight, heap, seen) do
+  def find_path(grid, destination, min_straight, max_straight, heap, seen) do
     current = Heap.root(heap)
+    {length, _dir_vector} = straight_path_length(current.last_moves)
     cond do
       current == nil -> []
-      current.location == destination -> current
+      current.location == destination &&  length >= min_straight -> current
       true ->
         key = {current.location, straight_path_length(Enum.take(current.last_moves, max_straight + 1))}
         if Map.get(seen, key) <= current.cost do
-          find_path(grid, destination, max_straight, Heap.pop(heap), seen)
+          find_path(grid, destination, min_straight, max_straight, Heap.pop(heap), seen)
         else
           next_seen = Map.put(seen, key, current.cost)
-          next_moves = next(grid, max_straight, current)
+          next_moves = next(grid, min_straight, max_straight, current)
           # next_q = Enum.sort_by(q ++ next_moves, &cost_sort/1)
           next_q = Enum.reduce(next_moves, Heap.pop(heap), fn move, h -> Heap.push(h, move) end)
-          find_path(grid, destination, max_straight, next_q, next_seen)
+          find_path(grid, destination, min_straight, max_straight, next_q, next_seen)
         end
       end
   end
 
-  def next(grid, max_straight, %State{location: loc, cost: total, last_moves: last}) do
-    moves = Enum.take(last, max_straight + 1)
-    newest = List.first(moves)
-    oldest = List.last(moves)
-
-    direction =  newest --- Enum.at(last, 1)
-
-    {dx, dy} =
-      if newest == nil || oldest == nil do
-        {0, 0}
-      else
-        absolute(oldest --- newest)
-      end
+  def next(grid, min_straight, max_straight, %State{location: loc, cost: total, last_moves: last}) do
+    {length, direction = {ux, uy}} = straight_path_length(last)
 
     next_delta =
       cond do
-        dx == max_straight -> [{0, 1}, {0, -1}]
-        dy == max_straight -> [{1, 0}, {-1, 0}]
+        length < min_straight && uy == 0 -> [{1, 0}, {-1, 0}]
+        length < min_straight && ux == 0 -> [{0, 1}, {0, -1}]
+        length == max_straight && uy == 0 -> [{0, 1}, {0, -1}]
+        length == max_straight && ux == 0 -> [{1, 0}, {-1, 0}]
         true -> [{0, 1}, {1, 0}, {0, -1}, {-1, 0}]
       end
 
@@ -118,15 +123,19 @@ defmodule Year2023.Day17 do
     {max_x, max_y}
   end
 
-  def unit({x, y}), do: { (if x > 0, do: 1, else: -1), (if y > 0, do: 1, else: -1) }
+  def sign(0), do: 0
+  def sign(x) when x < 0, do: -1
+  def sign(x) when x > 0, do: 1
+
+  def unit({x, y}), do: {sign(x), sign(y)}
 
   def straight_path_length([]), do: 0
   def straight_path_length([_]), do: 0
   def straight_path_length([a = {x, y}, b={v, w} | xs]) do
     {ux, uy} = unit(a --- b)
     cond do
-      (x == v) -> {straight_path_length([a, b | xs], :x), ux}
-      (y == w) -> {straight_path_length([a, b | xs], :y), uy}
+      (x == v) -> {straight_path_length([a, b | xs], :x), {ux, uy}}
+      (y == w) -> {straight_path_length([a, b | xs], :y), {ux, uy}}
       true -> {0, nil}
     end
   end
