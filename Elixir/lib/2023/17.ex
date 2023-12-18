@@ -1,7 +1,11 @@
 defmodule Year2023.Day17 do
   defmodule State do
     # starting block does not incur heating cost
-    defstruct cost: 0, last_moves: [{0, 0}, {-1, 0}], location: {0, 0}
+    defstruct cost: 0, last_moves: [{0, 0}], location: {0, 0}
+
+    def init(grid, {x, y}) do
+      %State{ cost: Map.get(grid, {x, y}), last_moves: [{x,y}, {0,0}], location: {x, y} }
+    end
   end
 
   @doc ~S"""
@@ -13,7 +17,7 @@ defmodule Year2023.Day17 do
     grid = parse_grid(lines)
     IO.inspect(target(grid))
     start = Heap.new(&by_cost/2)
-    r = find_path(grid, target(grid), 0, 3, Heap.push(start, %State{}))
+    r = find_path(grid, target(grid), 1, 3, Heap.push(Heap.push(start, State.init(grid, {0, 1})), State.init(grid, {1, 0})))
     AdventOfCode.PixelGrid.new(:crumbs)
     r.last_moves
     |> Enum.each(fn {x, y} ->
@@ -35,7 +39,7 @@ defmodule Year2023.Day17 do
     grid = parse_grid(lines)
     IO.inspect(target(grid))
     start = Heap.new(&by_cost/2)
-    r = find_path(grid, target(grid), 4, 10, Heap.push(start, %State{}))
+    r = find_path(grid, target(grid), 4, 10, Heap.push(Heap.push(start, State.init(grid, {0, 1})), State.init(grid, {1, 0})))
     AdventOfCode.PixelGrid.new(:crumbs)
     r.last_moves
     |> Enum.each(fn {x, y} ->
@@ -66,8 +70,8 @@ defmodule Year2023.Day17 do
     current = Heap.root(heap)
     {length, _dir_vector} = straight_path_length(current.last_moves)
     cond do
-      current == nil -> []
-      current.location == destination &&  length >= min_straight -> current
+      current == nil -> raise "No solution found?"
+      current.location == destination && length >= min_straight -> current
       true ->
         key = {current.location, straight_path_length(Enum.take(current.last_moves, max_straight + 1))}
         if Map.get(seen, key) <= current.cost do
@@ -75,7 +79,6 @@ defmodule Year2023.Day17 do
         else
           next_seen = Map.put(seen, key, current.cost)
           next_moves = next(grid, min_straight, max_straight, current)
-          # next_q = Enum.sort_by(q ++ next_moves, &cost_sort/1)
           next_q = Enum.reduce(next_moves, Heap.pop(heap), fn move, h -> Heap.push(h, move) end)
           find_path(grid, destination, min_straight, max_straight, next_q, next_seen)
         end
@@ -83,7 +86,8 @@ defmodule Year2023.Day17 do
   end
 
   def next(grid, min_straight, max_straight, %State{location: loc, cost: total, last_moves: last}) do
-    {length, direction = {ux, uy}} = straight_path_length(last)
+    {ux, uy} = hd(last) --- Enum.at(last, 1)
+    {length, direction} = straight_path_length(last)
 
     next_delta =
       cond do
@@ -98,7 +102,7 @@ defmodule Year2023.Day17 do
     |> Enum.reject(&(&1 +++ direction) == {0, 0}) # only allow 90 degree turns
     |> Enum.map(&(&1 +++ loc))
     |> Enum.map(&{&1, Map.get(grid, &1)})
-    |> Enum.reject(fn {_, cost} -> cost == nil end)
+    |> Enum.reject(fn {_, cost} -> cost == nil end) # cost = nil when out of bounds
     |> Enum.map(fn {loc, cost} ->
       %State{
         location: loc,
@@ -134,24 +138,24 @@ defmodule Year2023.Day17 do
   def straight_path_length([a = {x, y}, b={v, w} | xs]) do
     {ux, uy} = unit(a --- b)
     cond do
-      (x == v) -> {straight_path_length([a, b | xs], :x), {ux, uy}}
-      (y == w) -> {straight_path_length([a, b | xs], :y), {ux, uy}}
+      (x == v) -> {straight_path_length([a, b | xs], :y), {ux, uy}}
+      (y == w) -> {straight_path_length([a, b | xs], :x), {ux, uy}}
       true -> {0, nil}
     end
   end
 
   def straight_path_length([], _), do: 0
   def straight_path_length([_], _), do: 0
-  def straight_path_length([{x,_}, b = {v, _} | xs], :x) do
+  def straight_path_length([{x,_}, b = {v, _} | xs], :y) do
     cond do
-      x == v -> 1 + straight_path_length([b | xs], :x)
+      x == v -> 1 + straight_path_length([b | xs], :y)
       true -> 0
     end
   end
 
-  def straight_path_length([{_,y}, b = {_, w} | xs], :y) do
+  def straight_path_length([{_,y}, b = {_, w} | xs], :x) do
     cond do
-      y == w -> 1 + straight_path_length([b | xs], :y)
+      y == w -> 1 + straight_path_length([b | xs], :x)
       true -> 0
     end
   end
