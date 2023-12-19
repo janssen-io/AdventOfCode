@@ -32,10 +32,7 @@ defmodule Year2023.Day19 do
   167409079868000
   """
   def p2(lines) do
-    instructions =
-      lines
-      |> Enum.chunk_by(&(&1 == ""))
-      |> hd()
+    instructions = Enum.take_while(lines, &(&1 != ""))
 
     xmas = %{
       x: %{min: 1, max: 4000},
@@ -71,17 +68,22 @@ defmodule Year2023.Day19 do
     if_elses = String.split(right, ",")
 
     {children, _negations} =
-      Enum.reduce(if_elses, {[], ranges}, fn c, {children, new_range} ->
+      Enum.reduce(if_elses, {[], []}, fn c, {children, previous_conditions} ->
+        inverted_conditions = Enum.map(previous_conditions, fn f -> fn xmas -> f.(xmas, true) end end)
         case String.split(c, ":") do
           [condition, state] ->
-            parsed = create_range_modifier(condition)
-            updated_range = parsed.(new_range, false)
-            next_children = find_ranges(updated_range, instructions, state)
-            {next_children ++ children, parsed.(new_range, true)}
+            shrink_range = create_range_modifier(condition)
+            apply_condition = fn xmas -> shrink_range.(xmas, false) end
+            next_children =
+              Enum.reduce([ apply_condition | inverted_conditions], ranges, fn f, new_ranges -> f.(new_ranges) end)
+              |> find_ranges(instructions, state)
+            {next_children ++ children, [shrink_range | previous_conditions]}
 
           [state] ->
-            next_children = find_ranges(new_range, instructions, state)
-            {next_children ++ children, new_range}
+            next_children =
+              Enum.reduce(inverted_conditions, ranges, fn f, new_ranges -> f.(new_ranges) end)
+              |> find_ranges(instructions, state)
+            {next_children ++ children, previous_conditions}
         end
       end)
 
@@ -91,17 +93,17 @@ defmodule Year2023.Day19 do
   def create_range_modifier(condition) do
     property = String.slice(condition, 0, 1) |> String.to_atom()
     op = String.slice(condition, 1, 1) |> String.to_atom()
-    rhs = Elf.get_ints(condition) |> Enum.join() |> String.to_integer()
+    rhs = Elf.get_ints(condition) |> hd() |> String.to_integer()
 
     filter = fn xmas, negated ->
       %{min: min, max: max} = Map.get(xmas, property)
 
       updated_range =
         case {op, negated} do
-          {:>, false} -> %{min: rhs + 1, max: max}
-          {:>, true} -> %{min: min, max: rhs}
-          {:<, false} -> %{min: min, max: rhs - 1}
-          {:<, true} -> %{min: rhs, max: max}
+          {:>, false} -> %{min: max(rhs + 1, min), max: max}
+          {:>, true} -> %{min: min, max: min(rhs, max)}
+          {:<, false} -> %{min: min, max: min(rhs - 1, max)}
+          {:<, true} -> %{min: max(rhs, min), max: max}
         end
 
       Map.put(xmas, property, updated_range)
