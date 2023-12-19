@@ -26,13 +26,88 @@ defmodule Year2023.Day19 do
 
   def score(%{x: x, m: m, a: a, s: s}), do: x + m + a + s
 
-  # @doc ~S"""
-  # iex> AdventOfCode.example(2023, 19)
-  # ...> |> Year2023.Day19.p2
-  # 0
-  # """
+  @doc ~S"""
+  iex> AdventOfCode.example(2023, 19)
+  ...> |> Year2023.Day19.p2
+  167409079868000
+  """
   def p2(lines) do
-    0
+    instructions =
+      lines
+      |> Enum.chunk_by(&(&1 == ""))
+      |> hd()
+
+    xmas = %{
+      x: %{min: 1, max: 4000},
+      m: %{min: 1, max: 4000},
+      a: %{min: 1, max: 4000},
+      s: %{min: 1, max: 4000}
+    }
+
+    valid_ranges =
+      find_ranges(xmas, instructions, "in")
+      |> Enum.filter(fn xmas ->
+        Enum.all?(Map.keys(xmas), fn prop ->
+          %{min: min, max: max} = Map.get(xmas, prop)
+          min <= max
+        end)
+      end)
+
+    Enum.map(valid_ranges, fn xmas ->
+      Enum.reduce(Map.keys(xmas), 1, fn prop, product ->
+        %{min: min, max: max} = Map.get(xmas, prop)
+        product * (max - min + 1)
+      end)
+    end)
+    |> Enum.sum()
+  end
+
+  def find_ranges(ranges, _instructions, "A"), do: [ranges]
+  def find_ranges(_ranges, _instructions, "R"), do: []
+
+  def find_ranges(ranges, instructions, name) do
+    line = Enum.find(instructions, fn line -> String.starts_with?(line, "#{name}{") end)
+    [_, right] = String.trim(line, "}") |> String.split("{")
+    if_elses = String.split(right, ",")
+
+    {children, _negations} =
+      Enum.reduce(if_elses, {[], ranges}, fn c, {children, new_range} ->
+        case String.split(c, ":") do
+          [condition, state] ->
+            parsed = create_range_modifier(condition)
+            updated_range = parsed.(new_range, false)
+            next_children = find_ranges(updated_range, instructions, state)
+            {next_children ++ children, parsed.(new_range, true)}
+
+          [state] ->
+            next_children = find_ranges(new_range, instructions, state)
+            {next_children ++ children, new_range}
+        end
+      end)
+
+    children
+  end
+
+  def create_range_modifier(condition) do
+    property = String.slice(condition, 0, 1) |> String.to_atom()
+    op = String.slice(condition, 1, 1) |> String.to_atom()
+    rhs = Elf.get_ints(condition) |> Enum.join() |> String.to_integer()
+
+    filter = fn xmas, negated ->
+      %{min: min, max: max} = Map.get(xmas, property)
+
+      updated_range =
+        case {op, negated} do
+          {:>, false} -> %{min: rhs + 1, max: max}
+          {:>, true} -> %{min: min, max: rhs}
+          {:<, false} -> %{min: min, max: rhs - 1}
+          {:<, true} -> %{min: rhs, max: max}
+        end
+
+      Map.put(xmas, property, updated_range)
+    end
+
+    filter
   end
 
   def parse_part(part) do
