@@ -13,18 +13,25 @@ defmodule Year2023.Day21 do
   end
 
   @doc ~S"""
-  iex> AdventOfCode.example(2023, 21)
-  ...> |> Year2023.Day21.p2
-  0
+      iex> AdventOfCode.example(2023, 21)
+      ...> |> Year2023.Day21.p2(10)
+      50
+
+      iex> AdventOfCode.example(2023, 21)
+      ...> |> Year2023.Day21.p2(50)
+      1594
   """
-  def p2(lines) do
-    0
+  def p2(lines, times \\ 26_501_365) do
+    parse_grid(lines)
+    |> simulate(times)
+    |> MapSet.size()
   end
 
   def simulate(grid, n) do
     {start, _} = Map.to_list(grid) |> Enum.find(fn {_, c} -> c == "S" end)
     1..n
-    |> Enum.reduce(MapSet.new([start]), fn _, locs ->
+    |> Enum.reduce(MapSet.new([start]), fn i, locs ->
+      if rem(i, 1_00) == 0, do: IO.inspect(MapSet.size(locs))
       l = tick(grid, locs)
       # print(grid, l)
       # IO.read(:line)
@@ -36,7 +43,7 @@ defmodule Year2023.Day21 do
     Enum.reduce(locations, MapSet.new(), fn coord, new_locs ->
       [{1, 0}, {-1, 0}, {0, 1}, {0, -1}]
       |> Enum.reduce(new_locs, fn delta, locs ->
-        if Map.get(grid, coord +++ delta, "#") != "#" do
+        if get_inf(grid, coord +++ delta) != "#" do
           MapSet.put(locs, coord +++ delta)
         else
           locs

@@ -33,7 +33,8 @@ defmodule Year2023.Day20 do
   0
   """
   def p2(lines) do
-    0
+    parse_machine(lines)
+    |> turn_on(1, %{}, ~w[vd pn th fz])
   end
 
   def parse_machine(lines) do
@@ -97,15 +98,33 @@ defmodule Year2023.Day20 do
     |> Enum.reduce(machine, fn _, new_machine -> run(new_machine) end)
   end
 
+  # TODO: when do &br, &lf, &rz, &fk turn on together?
+  def turn_on(machine, cycle, sync_map, cons) do
+    if rem(cycle, 100_000) == 0, do: IO.inspect(cycle)
+    new_machine = run(machine)
+
+    sync_map = cons
+    |> Enum.map(fn con -> {con, Map.get(new_machine, con).state} end)
+    |> Enum.filter(fn {_con, state} -> state == :high end)
+    |> Enum.reduce(sync_map, fn {con, _state}, synced -> Map.put_new(synced, con, cycle) end)
+
+    if (map_size(sync_map) > 0), do: IO.inspect(sync_map)
+    if Enum.count(cons) == map_size(sync_map) do
+      Elf.lcm(Map.values(sync_map))
+    else
+      turn_on(new_machine, cycle + 1, sync_map, cons)
+    end
+  end
+
   def run(machine, queue \\ [{"roadcaster", {:button, :low}}])
   def run(machine, []), do: machine
   def run(machine, [{receiver, msg = {_sender, _signal}} | xs]) do
-    {next_states, intermediate_machine} = process(machine, Map.get(machine, receiver), msg)
+    {next_states, next_machine} = process(machine, Map.get(machine, receiver), msg)
 
-    next_machine =
-      Map.update!(intermediate_machine, receiver, fn mod ->
-        %{mod | signals: [msg | mod.signals]}
-      end)
+    # next_machine =
+    #   Map.update!(next_machine, receiver, fn mod ->
+    #     %{mod | signals: [msg | mod.signals]}
+    #   end)
 
     run(next_machine, xs ++ next_states)
   end
