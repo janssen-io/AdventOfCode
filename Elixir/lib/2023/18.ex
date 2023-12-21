@@ -35,7 +35,7 @@ defmodule Year2023.Day18 do
     IO.inspect({min_x, max_x, min_y, max_y})
     area =
       Map.values(grid)
-      |> Enum.reduce(0, fn {{x1, y1}, {x2, y2}}, sum ->
+      |> Enum.reduce(0, fn {{x1, y1}, {x2, _}}, sum ->
         sum + ((x1 - x2) * (y1 - min_y))
       end)
 
@@ -63,7 +63,7 @@ defmodule Year2023.Day18 do
     |> Enum.reduce(grid_pos, &dig/2)
   end
 
-  def dig_line2(line, grid_pos = {grid, pos}) do
+  def dig_line2(line, {grid, pos}) do
     [[_, length_hex, dir_idx]] = Regex.scan(~r/\(#(.{5})(\d)\)/, line)
     dirs = ["R", "D", "L", "U"]
     dir = Enum.at(dirs, String.to_integer(dir_idx))

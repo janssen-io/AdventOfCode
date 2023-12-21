@@ -2,9 +2,9 @@ defmodule Year2023.Day21 do
   import Point, only: [+++: 2]
 
   @doc ~S"""
-  iex> AdventOfCode.example(2023, 21)
-  ...> |> Year2023.Day21.p1(6)
-  16
+      iex> AdventOfCode.example(2023, 21)
+      ...> |> Year2023.Day21.p1(6)
+      16
   """
   def p1(lines, times \\ 64) do
     parse_grid(lines)
@@ -45,14 +45,28 @@ defmodule Year2023.Day21 do
     end)
   end
 
+  def get_inf(grid, {x, y}) do
+    max_x = Map.get(grid, :max_x)
+    max_y = Map.get(grid, :max_y)
+
+    {mx, my} = {mod(x, max_x + 1), mod(y, max_y + 1)}
+
+    result = Map.get(grid, {mx, my})
+    if result == nil, do: raise "{#{x}, #{y}} -> {#{mx}, #{my}} not in grid (#{max_x}, #{max_y})"
+
+    result
+  end
+
   def parse_grid(lines) do
     Enum.with_index(lines)
     |> Enum.reduce(%{}, fn {line, y}, g ->
       String.codepoints(line)
       |> Enum.with_index()
       |> Enum.reduce(g, fn {c, x}, gg ->
-        Map.put(gg, {x, y}, c)
+        Map.put(gg, :max_x, max(Map.get(gg, :max_x, 0), x))
+        |> Map.put({x, y}, c)
       end)
+      |> Map.put(:max_y, max(Map.get(g, :max_y, y), y))
     end)
   end
 
@@ -73,4 +87,20 @@ defmodule Year2023.Day21 do
     end
   end
 
+  @doc """
+      iex> Year2023.Day21.mod(8, 5)
+      3
+
+      iex> Year2023.Day21.mod(-8, 5)
+      2
+
+      iex> Year2023.Day21.mod(-1, 5)
+      4
+
+      iex> Year2023.Day21.mod(-5, 5)
+      0
+  """
+  def mod(n, m) when n >= 0, do: rem(n, m)
+  def mod(n, m) when rem(-n, m) == 0, do: 0
+  def mod(n, m), do: m - rem(-n, m)
 end

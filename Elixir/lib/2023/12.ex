@@ -229,8 +229,6 @@ defmodule Year2023.Day12 do
     |> String.to_integer(2)
   end
 
-  @spec to_int(any()) :: integer()
-  # |> String.to_integer(2)
   def to_int(arrangement), do: Enum.join(arrangement)
 
   def fits(x, spring, size) do

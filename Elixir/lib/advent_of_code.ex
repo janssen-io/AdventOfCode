@@ -1,5 +1,4 @@
 defmodule AdventOfCode do
-  @spec input(integer(), integer(), :example | :input) :: File.Stream.t()
   def input(year, day, input \\ :input) do
     input_path(year, day, input)
     |> File.stream!()

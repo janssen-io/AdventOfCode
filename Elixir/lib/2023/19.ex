@@ -1,8 +1,8 @@
 defmodule Year2023.Day19 do
   @doc ~S"""
-  iex> AdventOfCode.example(2023, 19)
-  ...> |> Year2023.Day19.p1
-  19114
+      iex> AdventOfCode.example(2023, 19)
+      ...> |> Year2023.Day19.p1
+      19114
   """
   def p1(lines) do
     [instructions, parts] =
@@ -27,9 +27,9 @@ defmodule Year2023.Day19 do
   def score(%{x: x, m: m, a: a, s: s}), do: x + m + a + s
 
   @doc ~S"""
-  iex> AdventOfCode.example(2023, 19)
-  ...> |> Year2023.Day19.p2
-  167409079868000
+      iex> AdventOfCode.example(2023, 19)
+      ...> |> Year2023.Day19.p2
+      167409079868000
   """
   def p2(lines) do
     instructions = Enum.take_while(lines, &(&1 != ""))
@@ -90,16 +90,45 @@ defmodule Year2023.Day19 do
     children
   end
 
+  @doc ~S"""
+  Generates a function that shrinks a given range to satisfy the given condition.
+
+  It shrinks the range so that the condition is always met
+
+      iex> f = Year2023.Day19.create_range_modifier("m>10")
+      ...> f.(%{ m: %{ min: 1, max: 20 }}, false)
+      %{ m: %{ min: 11, max: 20 }}
+
+      iex> f = Year2023.Day19.create_range_modifier("m<10")
+      ...> f.(%{ m: %{ min: 1, max: 20 }}, false)
+      %{ m: %{ min: 1, max: 9 }}
+
+  It shrinks the range so that the inverted condition is always met
+
+      iex> f = Year2023.Day19.create_range_modifier("m<10")
+      ...> f.(%{ m: %{ min: 1, max: 20 }}, true)
+      %{ m: %{ min: 10, max: 20 }}
+
+      iex> f = Year2023.Day19.create_range_modifier("m>10")
+      ...> f.(%{ m: %{ min: 1, max: 20 }}, true)
+      %{ m: %{ min: 1, max: 10 }}
+
+  It does not grow the range when the condition is already satisfied by the current range
+
+      iex> f = Year2023.Day19.create_range_modifier("m>10")
+      ...> f.(%{ m: %{ min: 15, max: 20 }}, false)
+      %{ m: %{ min: 15, max: 20 }}
+  """
   def create_range_modifier(condition) do
     property = String.slice(condition, 0, 1) |> String.to_atom()
     op = String.slice(condition, 1, 1) |> String.to_atom()
     rhs = Elf.get_ints(condition) |> hd() |> String.to_integer()
 
-    filter = fn xmas, negated ->
+    filter = fn xmas, is_inverted ->
       %{min: min, max: max} = Map.get(xmas, property)
 
       updated_range =
-        case {op, negated} do
+        case {op, is_inverted} do
           {:>, false} -> %{min: max(rhs + 1, min), max: max}
           {:>, true} -> %{min: min, max: min(rhs, max)}
           {:<, false} -> %{min: min, max: min(rhs - 1, max)}
@@ -124,12 +153,12 @@ defmodule Year2023.Day19 do
   end
 
   @doc """
-  iex> Enum.map(Year2023.Day19.parse_if_elses(["A}"]), & &1.(%{ x: 1}))
-  ["A"]
-  iex> Enum.map(Year2023.Day19.parse_if_elses(["x<2006:R","A}"]), & &1.(%{ x: 1}))
-  ["R", "A"]
-  iex> Enum.map(Year2023.Day19.parse_if_elses(["x>2006:R","A}"]), & &1.(%{ x: 1}))
-  [false, "A"]
+      iex> Enum.map(Year2023.Day19.parse_if_elses(["A}"]), & &1.(%{ x: 1}))
+      ["A"]
+      iex> Enum.map(Year2023.Day19.parse_if_elses(["x<2006:R","A}"]), & &1.(%{ x: 1}))
+      ["R", "A"]
+      iex> Enum.map(Year2023.Day19.parse_if_elses(["x>2006:R","A}"]), & &1.(%{ x: 1}))
+      [false, "A"]
   """
   def parse_if_elses([otherwise]) do
     state = String.trim(otherwise, "}")

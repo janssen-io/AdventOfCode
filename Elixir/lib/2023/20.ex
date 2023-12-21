@@ -4,7 +4,7 @@ defmodule Year2023.Day20 do
   end
 
   defmodule Con do
-    defstruct id: nil, outputs: [], signals: [], inputs: Map.new()
+    defstruct id: nil, outputs: [], signals: [], inputs: Map.new(), state: :low
   end
 
   defmodule Flip do
@@ -18,7 +18,7 @@ defmodule Year2023.Day20 do
   @doc ~S"""
   iex> AdventOfCode.example(2023, 20)
   ...> |> Year2023.Day20.p1
-  11687500
+  817896682
   """
   def p1(lines) do
     parse_machine(lines)
@@ -130,6 +130,7 @@ defmodule Year2023.Day20 do
     next_con = %Con{module | inputs: Map.put(inputs, sender, signal)}
     on? = Map.values(next_con.inputs) |> Enum.all?(&(&1 == :high))
     forwarded_signal = if on?, do: :low, else: :high
+    next_con = %Con{next_con | state: flip(forwarded_signal)}
     {Enum.map(outputs, fn id -> {id, {module.id, forwarded_signal}} end), set(machine, next_con)}
   end
 
