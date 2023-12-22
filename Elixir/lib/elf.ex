@@ -16,8 +16,8 @@ defmodule Elf do
     |> List.flatten
   end
   @doc ~S"""
-    iex> Elf.get_ints("Part 1: 10 12 14 -15")
-    ["1", "10", "12", "14", "15"]
+      iex> Elf.get_ints("Part 1: 10 12 14 -15")
+      ["1", "10", "12", "14", "15"]
   """
   def get_ints(string), do: get_ints(string, :+)
 
