@@ -4,14 +4,15 @@ defmodule Year2023.Day22 do
   # AAABBB
   #   CC D
   # ======
-  # C -> A, B
-  # D -> B
+  # C supports A, B
+  # D supports B
   #
-  # A <- C
-  # B <- C, D
+  # A supported by C
+  # B supported by C, D
   #
-  # => Keep a list of list of supports. Count the number unique supports that occur in singletons.
-  # Total - unique singletons = p1 answer
+  # Solution => Keep a list of per brick.
+  #             Count the number unique supports that occur in singletons.
+  #          => Total - unique singletons = p1 answer
 
   @doc ~S"""
       iex> AdventOfCode.example(2023, 22)
@@ -56,6 +57,16 @@ defmodule Year2023.Day22 do
 
   def xy(%{x: x, y: y}), do: {x, y}
 
+  @doc """
+      iex> c = {%{ x: 2, y: 0, z: 1}, %{x: 3, y: 0, z: 1}}
+      ...> d = {%{ x: 5, y: 0, z: 1}, %{x: 5, y: 0, z: 1}}
+      ...> a = {%{ x: 0, y: 0, z: 2}, %{x: 2, y: 0, z: 2}}
+      ...> b = {%{ x: 3, y: 0, z: 2}, %{x: 5, y: 0, z: 2}}
+      ...> bricks = [c,d,a,b]
+      ...> ls = &Year2023.Day22.list_supports/3
+      ...> Enum.map(bricks, fn brick -> ls.(bricks, brick, []) end)
+      [[], [], [c], [d, c]]
+  """
   def list_supports(bricks, supported, supports \\ [])
   def list_supports([], _, supports), do: supports
 
