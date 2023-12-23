@@ -9,6 +9,7 @@ defmodule Year2023.Day23 do
   def p1(lines) do
     parse_grid(lines)
     |> walk()
+    |> Enum.max()
   end
 
   @doc ~S"""
@@ -24,7 +25,6 @@ defmodule Year2023.Day23 do
 
     grid
     |> weighted_graph()
-    |> IO.inspect(label: :graph)
     |> walk_graph([{start, []}], destination)
     |> Enum.max()
   end
@@ -40,8 +40,7 @@ defmodule Year2023.Day23 do
       new_seen = MapSet.put(seen, pos)
 
       if y == max_y(grid) do
-        IO.inspect(MapSet.size(seen))
-        walk(grid, q, [MapSet.size(seen) | results])
+        walk(grid, Enum.take(q, 5), [MapSet.size(seen) | results])
       else
         case Map.get(grid, pos, :wall) do
           :wall ->
@@ -67,7 +66,7 @@ defmodule Year2023.Day23 do
         walk_graph(graph, q, to, results)
 
       pos == to ->
-        length = path_length(graph, [to | seen])
+        length = path_length(graph, Enum.reverse([to | seen]))
         new_results = [length | results]
         walk_graph(graph, q, to, new_results)
 
@@ -102,24 +101,34 @@ defmodule Year2023.Day23 do
   end
 
   def weighted_graph(grid) do
+    destination = {max_x(grid) - 1, max_y(grid)}
+    entrance = {1, 0}
+
     intersections =
       Map.keys(grid)
       |> Enum.filter(&intersection?(grid, &1))
-      |> Enum.concat([{1, 0}, {max_x(grid) - 1, max_y(grid)}])
+      |> Enum.concat([entrance, destination])
 
     pairs = for from <- intersections, to <- intersections, do: {from, to}
 
-    Enum.reject(pairs, fn {from, to} -> from == to end)
-    |> Enum.reduce(%{}, fn {from, to}, graph ->
-      distance = distance(grid, from, to, [{from, MapSet.new()}])
+    graph =
+      Enum.reject(pairs, fn {from, to} -> from == to end)
+      |> Enum.reduce(%{}, fn {from, to}, graph ->
+        distance = distance(grid, from, to, [{from, MapSet.new()}])
 
-      case distance do
-        [] ->
-          graph
+        case distance do
+          [] ->
+            graph
 
-        [d] ->
-          Map.update(graph, from, %{to => d}, fn neighbours -> Map.put(neighbours, to, d) end)
-      end
+          [d] ->
+            Map.update(graph, from, %{to => d}, fn neighbours -> Map.put(neighbours, to, d) end)
+        end
+      end)
+
+    [last_intersection] = Map.get(graph, destination) |> Map.keys()
+
+    Map.update!(graph, last_intersection, fn g ->
+      Map.filter(g, fn {k, _v} -> k == destination end)
     end)
   end
 
@@ -161,14 +170,12 @@ defmodule Year2023.Day23 do
   def valid_steps(grid, pos, seen \\ MapSet.new()) do
     case Map.get(grid, pos, :wall) do
       :east ->
-        [pos +++ {1, 0}, pos --- {1, 0}]
-
-      # [pos +++ {1, 0}]
+        # [pos +++ {1, 0}, pos --- {1, 0}]
+        [pos +++ {1, 0}]
 
       :south ->
-        [pos +++ {0, 1}, pos --- {0, 1}]
-
-      # [pos +++ {0, 1}]
+        # [pos +++ {0, 1}, pos --- {0, 1}]
+        [pos +++ {0, 1}]
 
       :wall ->
         raise "Cannot pass through walls (#{pos})"
