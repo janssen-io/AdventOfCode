@@ -81,20 +81,10 @@ defmodule Year2023.Day11 do
 
   def pairwise_distance(grid) do
     Map.keys(grid)
-    |> pairs()
+    |> Elf.pairs()
     |> Enum.map(fn {l, r} -> distance(l, r) end)
     |> Enum.sum()
   end
 
   def distance({x, y}, {a, b}), do: abs(b - y) + abs(a - x)
-
-  @doc """
-  iex> Year2023.Day11.pairs([1,2,3,4,5])
-  [{1,2}, {1,3}, {1,4}, {1,5}, {2,3}, {2,4}, {2,5}, {3,4}, {3,5}, {4,5}]
-  """
-  def pairs([]), do: []
-  def pairs([x|ys]) do
-    Enum.map(ys, fn y -> {x, y} end)
-    |> Enum.concat(pairs(ys))
-  end
 end

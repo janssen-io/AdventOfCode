@@ -44,10 +44,28 @@ defmodule Elf do
     |> List.flatten()
   end
 
-  def fst([a, _]), do: a
+  def fst([a | _]), do: a
   def fst({a, _}), do: a
-  def snd([_, b]), do: b
-  def snd({_, b}), do: b
+  def fst({a, _, _}), do: a
+  def snd([_, b | _]), do: b
+  def snd({_, b, _}), do: b
+
+  def uncurry(f), do: fn {a, b} -> f.(a, b) end
+
+  def sign(0), do: 0
+  def sign(x) when x < 0, do: -1
+  def sign(x) when x > 0, do: 1
+
+  @doc """
+      iex> Year2023.Day11.pairs([1,2,3,4,5])
+      [{1,2}, {1,3}, {1,4}, {1,5}, {2,3}, {2,4}, {2,5}, {3,4}, {3,5}, {4,5}]
+  """
+  def pairs([]), do: []
+
+  def pairs([x | ys]) do
+    Enum.map(ys, fn y -> {x, y} end)
+    |> Enum.concat(pairs(ys))
+  end
 
   @doc ~S"""
     iex> Elf.lcm(2, 3)
@@ -77,13 +95,15 @@ end
 
 defmodule Point do
   def add({x1, y1, z1}, {x2, y2, z2}), do: {x1 + x2, y1 + y2, z1 + z2}
-  def sub({x1, y1, z1}, {x2, y2, z2}), do: {x1 - x2, y1 - y2, z1 - z2}
-  def mul({x1, y1, z1}, {x2, y2, z2}), do: {x1 * x2, y1 * y2, z1 * z2}
-  def len({x1, y1, z1}), do: (x1 ** 2 + y1 ** 2 + z1 ** 2) ** 0.5
-
   def add({x1, y1}, {x2, y2}), do: {x1 + x2, y1 + y2}
+
+  def sub({x1, y1, z1}, {x2, y2, z2}), do: {x1 - x2, y1 - y2, z1 - z2}
   def sub({x1, y1}, {x2, y2}), do: {x1 - x2, y1 - y2}
+
+  def mul({x1, y1, z1}, {x2, y2, z2}), do: {x1 * x2, y1 * y2, z1 * z2}
   def mul({x1, y1}, {x2, y2}), do: {x1 * x2, y1 * y2}
+
+  def len({x1, y1, z1}), do: (x1 ** 2 + y1 ** 2 + z1 ** 2) ** 0.5
   def len({x1, y1}), do: (x1 ** 2 + y1 ** 2) ** 0.5
 
   def lhs +++ rhs, do: add(lhs, rhs)
