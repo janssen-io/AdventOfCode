@@ -8,13 +8,14 @@ defmodule Elf do
   """
   def get_ints(string, :-) do
     Regex.scan(~r/-?\d+/, string)
-    |> List.flatten
+    |> List.flatten()
   end
 
   def get_ints(string, :+) do
     Regex.scan(~r/\d+/, string)
-    |> List.flatten
+    |> List.flatten()
   end
+
   @doc ~S"""
       iex> Elf.get_ints("Part 1: 10 12 14 -15")
       ["1", "10", "12", "14", "15"]
@@ -40,7 +41,7 @@ defmodule Elf do
   """
   def get_numbers(string) do
     Regex.scan(~r/-?\d+(?:\.\d+)?/, string)
-    |> List.flatten
+    |> List.flatten()
   end
 
   def fst([a, _]), do: a
@@ -56,11 +57,11 @@ defmodule Elf do
     iex> Elf.lcm(6, 9)
     18
   """
-  def lcm(a, b), do: div((a * b), Integer.gcd(a, b))
+  def lcm(a, b), do: div(a * b, Integer.gcd(a, b))
 
   def lcm([x]), do: x
-  def lcm([x,y]), do: lcm(x, y)
-  def lcm([x,y|xs]), do: lcm([lcm(x, y) | xs])
+  def lcm([x, y]), do: lcm(x, y)
+  def lcm([x, y | xs]), do: lcm([lcm(x, y) | xs])
 
   @doc ~S"""
   iex> Elf.convert_range({5, 10}, {20, 30}, 8)
@@ -68,11 +69,18 @@ defmodule Elf do
   iex> Elf.convert_range({5, 10}, {20, 30}, 8.0)
   23.0
   """
-  def convert_range(a, b, n) when is_integer(n), do: convert_range(a, b, n + 0.0) |> Float.round() |> trunc
-  def convert_range({x1, x2}, {y1, y2}, n) when is_float(n), do: ((n - x1) / x2) * (y2 - y1) + y1
+  def convert_range(a, b, n) when is_integer(n),
+    do: convert_range(a, b, n + 0.0) |> Float.round() |> trunc
+
+  def convert_range({x1, x2}, {y1, y2}, n) when is_float(n), do: (n - x1) / x2 * (y2 - y1) + y1
 end
 
 defmodule Point do
+  def add({x1, y1, z1}, {x2, y2, z2}), do: {x1 + x2, y1 + y2, z1 + z2}
+  def sub({x1, y1, z1}, {x2, y2, z2}), do: {x1 - x2, y1 - y2, z1 - z2}
+  def mul({x1, y1, z1}, {x2, y2, z2}), do: {x1 * x2, y1 * y2, z1 * z2}
+  def len({x1, y1, z1}), do: (x1 ** 2 + y1 ** 2 + z1 ** 2) ** 0.5
+
   def add({x1, y1}, {x2, y2}), do: {x1 + x2, y1 + y2}
   def sub({x1, y1}, {x2, y2}), do: {x1 - x2, y1 - y2}
   def mul({x1, y1}, {x2, y2}), do: {x1 * x2, y1 * y2}
@@ -95,18 +103,22 @@ defmodule Memo do
     if cached != nil do
       update(name, :hits, &(&1 + 1), 1)
       hits = get(name, :hits)
-      if (rem(hits, 1000) == 0) do
+
+      if rem(hits, 1000) == 0 do
         misses = get(name, :misses)
         IO.inspect({hits, misses})
       end
+
       cached
     else
       update(name, :misses, &(&1 + 1), 1)
       misses = get(name, :misses)
-      if (rem(misses, 1000) == 0) do
-      hits = get(name, :hits, 0)
+
+      if rem(misses, 1000) == 0 do
+        hits = get(name, :hits, 0)
         IO.inspect({hits, misses})
       end
+
       value = factory.()
       set(name, key, value)
       value
